@@ -1,38 +1,36 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Home, Package, Gift, ShoppingCart } from 'lucide-react';
 
 const BottomNavigation = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-
+  
   const navItems = [
-    { icon: Home, label: 'Home', path: '/' },
-    { icon: Package, label: 'Orders', path: '/orders' },
-    { icon: Gift, label: 'Offers', path: '/offers' },
-    { icon: ShoppingCart, label: 'Cart', path: '/cart' },
+    { path: '/', label: 'Home', icon: Home },
+    { path: '/orders', label: 'Orders', icon: Package },
+    { path: '/brands', label: 'Offers', icon: Gift },
+    { path: '/cart', label: 'Cart', icon: ShoppingCart }
   ];
-
+  
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
-      <div className="flex justify-around">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.path;
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+      <div className="grid grid-cols-4">
+        {navItems.map(({ path, label, icon: Icon }) => {
+          const isActive = location.pathname === path;
           
           return (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+            <Link
+              key={path}
+              to={path}
+              className={`flex flex-col items-center py-2 px-1 transition-colors ${
                 isActive
                   ? 'text-blue-600 bg-blue-50'
-                  : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                  : 'text-gray-600 hover:text-blue-600'
               }`}
             >
               <Icon size={20} />
-              <span className="text-xs mt-1">{item.label}</span>
-            </button>
+              <span className="text-xs mt-1">{label}</span>
+            </Link>
           );
         })}
       </div>

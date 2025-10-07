@@ -1,62 +1,94 @@
-/**
- * @typedef {Object} Product
- * @property {string} id - Unique identifier for the product
- * @property {string} name - Name of the product
- * @property {string} image - URL or path to the product image
- * @property {number} mrp - Maximum retail price
- * @property {PricingTier[]} pricingTiers - Array of pricing tiers based on quantity
- * @property {string} description - Product description
- * @property {PackSize[]} packSizes - Available pack sizes for the product
- * @property {string} category - Product category
- * @property {string} brand - Product brand
- * @property {number} stock - Available stock quantity
- */
+// Enum-like constant for CustomerTier
+export const CustomerTier = {
+  CONSUMER: 'consumer',
+  RETAILER: 'retailer',
+  WHOLESALER: 'wholesaler'
+};
 
-/**
- * @typedef {Object} PricingTier
- * @property {string} range - Quantity range (e.g., "1-10")
- * @property {number} minQuantity - Minimum quantity for this tier
- * @property {number|null} maxQuantity - Maximum quantity for this tier (null for unlimited)
- * @property {number} price - Price per unit in this tier
- * @property {number} margin - Profit margin percentage
- */
+// Sample data structures for documentation
+export const PricingTier = {
+  // Example: { price: 100, margin: 20 }
+};
 
-/**
- * @typedef {Object} PackSize
- * @property {string} id - Unique identifier for the pack size
- * @property {string} name - Name of the pack size (e.g., "Single Pack")
- * @property {number} multiplier - Multiplier for quantity calculations
- */
+export const PackagingInfo = {
+  // Example: { unitsPerBox: 12, boxesPerPack: 10, minBoxes: 1, maxBoxes: 100 }
+};
 
-/**
- * @typedef {Object} CartItem
- * @property {string} productId - ID of the product
- * @property {Product} product - Product details
- * @property {PackSize} packSize - Selected pack size
- * @property {number} quantity - Quantity in the cart
- */
+export const Product = {
+  // Example: {
+  //   id: '1',
+  //   name: 'Blue Heaven Kajal',
+  //   image: 'https://example.com/image.jpg',
+  //   mrp: 35,
+  //   pricingTiers: {
+  //     [CustomerTier.CONSUMER]: { price: 30, margin: 14.29 },
+  //     [CustomerTier.RETAILER]: { price: 25, margin: 28.57 },
+  //     [CustomerTier.WHOLESALER]: { price: 20, margin: 42.86 }
+  //   },
+  //   stock: 100,
+  //   category: 'Cosmetics',
+  //   brand: 'Blue Heaven',
+  //   description: 'Long-lasting kajal',
+  //   features: ['Waterproof', 'Smudge-proof'],
+  //   deliveryDays: '2-3 days',
+  //   packaging: { unitsPerBox: 12, boxesPerPack: 10, minBoxes: 1, maxBoxes: 100 }
+  // }
+};
 
-/**
- * @typedef {Object} Address
- * @property {string} id - Unique identifier for the address
- * @property {string} name - Name associated with the address
- * @property {string} address - Street address
- * @property {string} city - City name
- * @property {string} pincode - Postal code
- * @property {string} phone - Contact phone number
- */
+export const CartItem = {
+  // Example: {
+  //   productId: '1',
+  //   name: 'Blue Heaven Kajal',
+  //   image: 'https://example.com/image.jpg',
+  //   quantity: 10,
+  //   price: 30,
+  //   tier: CustomerTier.CONSUMER,
+  //   mrp: 35,
+  //   purchaseMode: 'units',
+  //   displayQuantity: '10 units'
+  // }
+};
 
-/**
- * @typedef {Object} Brand
- * @property {string} id - Unique identifier for the brand
- * @property {string} name - Brand name
- * @property {string} logo - URL or path to the brand logo
- */
+export const Address = {
+  // Example: {
+  //   id: '1',
+  //   name: 'Home',
+  //   addressLine: '123 Main Street, Apartment 4B',
+  //   city: 'Mumbai',
+  //   state: 'Maharashtra',
+  //   pincode: '400001',
+  //   phone: '+91 98765 43210',
+  //   isDefault: true
+  // }
+};
 
-/**
- * @typedef {Object} Category
- * @property {string} id - Unique identifier for the category
- * @property {string} name - Category name
- * @property {string} image - URL or path to the category image
- * @property {string[]} subcategories - Array of subcategory names
- */
+export const Order = {
+  // Example: {
+  //   id: '1',
+  //   userId: '1',
+  //   items: [CartItem],
+  //   total: 300,
+  //   address: Address,
+  //   status: 'delivered',
+  //   createdAt: '2024-01-15T10:30:00Z',
+  //   deliveryDate: '2024-01-17T14:00:00Z'
+  // }
+};
+
+export const Brand = {
+  // Example: {
+  //   id: '1',
+  //   name: 'Blue Heaven',
+  //   logo: 'https://example.com/logo.jpg',
+  //   description: 'Quality cosmetics brand'
+  // }
+};
+
+export const Category = {
+  // Example: {
+  //   id: '1',
+  //   name: 'Cosmetics',
+  //   image: 'https://example.com/category.jpg',
+  //   subcategories: ['Kajal', 'Lipstick']
+  // }
+};
