@@ -1,86 +1,73 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, User, LogIn } from 'lucide-react';
-import { useCart } from '../contexts/CartContext';
+import React, { useState, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, User } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
+import UserLogin from '../pages/UserLogin';
 
-const Header = () => {
+const Header = ({ title, showBackButton }) => {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const { isAuthenticated, isAdmin, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-  const location = useLocation();
-  const { items } = useCart();
-  const [showLoginOptions, setShowLoginOptions] = useState(false);
-  
-  const getPageTitle = () => {
-    const path = location.pathname;
-    if (path === '/') return 'Market Server Price (MSP)';
-    if (path === '/products') return 'Products';
-    if (path === '/cart') return 'Cart';
-    if (path === '/addresses') return 'My Addresses';
-    if (path === '/brands') return 'Brands';
-    if (path === '/categories') return 'Categories';
-    if (path === '/orders') return 'My Orders';
-    if (path === '/admin') return 'Admin Panel';
-    return 'AK Wholesaler';
-  };
-  
-  const canGoBack = location.pathname !== '/';
-  const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  
-  const handleUserClick = () => {
-    setShowLoginOptions(!showLoginOptions);
+
+  const handleLoginClick = () => {
+    if (isAuthenticated) {
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/profile'); // Redirect to user profile or dashboard
+      }
+    } else {
+      setIsLoginModalOpen(true);
+    }
   };
 
-  const handleAdminLogin = () => {
-    navigate('/admin/login');
-    setShowLoginOptions(false);
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
-    <header className="bg-blue-600 text-white shadow-lg sticky top-0 z-50">
-      <div className="px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          {canGoBack && (
+    <header className="bg-blue-600 text-white p-4 shadow-md">
+      <div className="container mx-auto flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          {showBackButton && (
+            <Link to="/" className="hover:text-blue-200">
+              <ArrowLeft size={24} />
+            </Link>
+          )}
+          <h1 className="text-xl font-semibold">{title}</h1>
+        </div>
+        <div>
+          {isAuthenticated ? (
+            <div className="flex items-center space-x-4">
+              <Link to={isAdmin ? '/admin' : '/profile'} className="hover:text-blue-200">
+                {isAdmin ? 'Admin Panel' : 'Profile'}
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={() => navigate(-1)}
-              className="p-1 hover:bg-blue-700 rounded-full transition-colors"
+              onClick={handleLoginClick}
+              className="flex items-center space-x-2 bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100"
             >
-              <ArrowLeft size={20} />
+              <User size={20} />
+              <span>Login</span>
             </button>
           )}
-          <h1 className="text-lg font-semibold">{getPageTitle()}</h1>
-        </div>
-        
-        <div className="flex items-center space-x-4 relative">
-          <Link
-            to="/cart"
-            className="relative p-2 hover:bg-blue-700 rounded-full transition-colors"
-          >
-            <ShoppingCart size={20} />
-            {cartItemCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {cartItemCount > 99 ? '99+' : cartItemCount}
-              </span>
-            )}
-          </Link>
-          
-          <div
-            onClick={handleUserClick}
-            className="p-2 hover:bg-blue-700 rounded-full transition-colors cursor-pointer relative"
-          >
-            <User size={20} />
-            {showLoginOptions && (
-              <div className="absolute right-0 mt-2 w-48 bg-white text-black rounded shadow-lg">
-                <button
-                  onClick={handleAdminLogin}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                >
-                  <LogIn size={16} /> Admin Login
-                </button>
-                {/* Add other login options here if needed */}
-              </div>
-            )}
-          </div>
         </div>
       </div>
+      {isLoginModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <UserLogin closeModal={() => setIsLoginModalOpen(false)} />
+          </div>
+        </div>
+      )}
     </header>
   );
 };
