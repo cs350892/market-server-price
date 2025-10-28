@@ -5,7 +5,7 @@ function globalErrorHandler(err, req, res, next) {
   res.status(statusCode).json({
     success: false,
     message: err.message,
-    errorStack: config.nodeEnv === "developmet" ? err.stack : "",
+    errorStack: config.nodeEnv === "development" ? err.stack : "",
   });
 }
 
