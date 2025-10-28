@@ -4,6 +4,12 @@ import crypto from "node:crypto";
 
 const userSchema = new mongoose.Schema(
   {
+    name: {
+      type: String,
+      required: [true, "User name required"],
+      trim: true,
+      maxLength: [50, "name connot exceed 50 characters"],
+    },
     email: {
       type: String,
       required: true,
@@ -38,6 +44,20 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
+
+// Virtual field
+// for full user profile
+
+userSchema.virtual("profileURL").get(function () {
+  return {
+    name: this.name,
+    email: this.email,
+    bio: this.bio,
+    avatar: this.avatar,
+    role: this.role,
+    lastActive: this.lastActive,
+  };
+});
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
