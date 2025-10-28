@@ -1,8 +1,10 @@
 import express from "express";
-import { config } from "./config";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import globalErrorHandler from "./middleware/globalErrorHandler";
+import helmet from "helmet";
+import hpp from "hpp";
+import globalErrorHandler from "./middleware/globalErrorHandler.js";
+import { config } from "./config/index.js";
 
 const app = express();
 
@@ -34,8 +36,6 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
 
 // routes
-
-
 
 // Global error handler
 app.use(globalErrorHandler);

@@ -1,5 +1,4 @@
-import { HttpError } from "http-errors";
-import { config } from "../config";
+import { config } from "../config/index.js";
 
 function globalErrorHandler(err, req, res, next) {
   const statusCode = err.statusCode || 500;

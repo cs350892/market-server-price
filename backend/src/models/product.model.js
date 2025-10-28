@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
+import { Schema, model } from 'mongoose';
 
-const pricingTierSchema = new mongoose.Schema({
+const pricingTierSchema = new Schema({
   range: { type: String, required: true }, // e.g., "1-20"
   minQuantity: { type: Number, required: true },
   maxQuantity: { type: Number, default: null }, // null means no upper limit
@@ -8,13 +8,13 @@ const pricingTierSchema = new mongoose.Schema({
   margin: { type: Number, required: true },
 });
 
-const packSizeSchema = new mongoose.Schema({
+const packSizeSchema = new Schema({
   id: { type: String, required: true },
   name: { type: String, required: true },
   multiplier: { type: Number, required: true },
 });
 
-const productSchema = new mongoose.Schema({
+const productSchema = new Schema({
   id: { type: String, required: true, unique: true },
   type: { type: String, enum: ['high-margin', 'regional-brands'], required: true },
   name: { type: String, required: true },
@@ -32,4 +32,4 @@ const productSchema = new mongoose.Schema({
 productSchema.index({ category: 1 });
 productSchema.index({ brand: 1 });
 
-module.exports = mongoose.model('Product', productSchema);
+export default model('Product', productSchema);
