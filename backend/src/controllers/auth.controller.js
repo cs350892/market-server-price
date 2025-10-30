@@ -2,8 +2,8 @@
 // import { sign } from 'jsonwebtoken';
 
 import createHttpError from "http-errors";
-import { User } from "../models/user.model";
-import { genrateAccessToken, genrateRefreshToken } from "../utils/genrateToken";
+import { User } from "../models/user.model.js";
+import { genrateAccessToken, genrateRefreshToken } from "../utils/genrateToken.js";
 
 // Login controller
 // export async function login(req, res) {
