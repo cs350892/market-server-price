@@ -1,6 +1,6 @@
 import createHttpError from "http-errors";
 import jwt from "jsonwebtoken";
-import { config } from "../config";
+import { config } from "../config/index.js";
 
 const verifyToken = (token, secret) => {
   try {
@@ -11,7 +11,7 @@ const verifyToken = (token, secret) => {
 };
 
 const authenticate = async (req, res, next) => {
-  const authHeader = req.header("Authoriztion");
+  const authHeader = req.header("Authorization");
   if (!authHeader) {
     return next(createHttpError(401, "Auth token is required"));
   }
@@ -34,7 +34,7 @@ const authenticate = async (req, res, next) => {
     return next();
   } catch (err) {
     console.log("Access token error:", err.message);
-    if (err.name === "TokenExipredError") {
+  if (err.name === "TokenExpiredError") {
       const refreshTokenHeader = req.header("refreshToken");
       if (!refreshTokenHeader) {
         return next(createHttpError(401, "Refresh token not found"));

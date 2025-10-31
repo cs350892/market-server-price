@@ -1,11 +1,11 @@
-const express = require("express");
+import express from 'express';
+import authMW from '../middleware/authMiddleware.js';
+import Order from '../models/order.model.js';
+const { verifyToken, isAdmin } = authMW;
 const router = express.Router();
-const { authMiddleware, adminMiddleware } =
-  require("../middleware/auth.middleware").default;
-const Order = require("../models/order.model");
 
 // Get all orders (admin only)
-router.get("/", authMiddleware, adminMiddleware, async (req, res) => {
+router.get("/", verifyToken, isAdmin, async (req, res) => {
   try {
     const orders = await Order.find().populate("user", "username email");
     res.json(orders);
@@ -15,7 +15,7 @@ router.get("/", authMiddleware, adminMiddleware, async (req, res) => {
 });
 
 // Get user's orders
-router.get("/my-orders", authMiddleware, async (req, res) => {
+router.get("/my-orders", verifyToken, async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user.id });
     res.json(orders);
@@ -25,7 +25,7 @@ router.get("/my-orders", authMiddleware, async (req, res) => {
 });
 
 // Create new order
-router.post("/", authMiddleware, async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   try {
     const order = new Order({
       ...req.body,
@@ -39,7 +39,7 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 // Update order status (admin only)
-router.patch("/:id", authMiddleware, adminMiddleware, async (req, res) => {
+router.patch("/:id", verifyToken, isAdmin, async (req, res) => {
   try {
     const order = await Order.findByIdAndUpdate(
       req.params.id,
@@ -53,4 +53,4 @@ router.patch("/:id", authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

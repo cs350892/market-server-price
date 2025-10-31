@@ -1,15 +1,15 @@
 import createHttpError from "http-errors";
-import { User } from "../models/user.model.js";
+import User from "../models/User.js";
 
 const updateUserLastActive = async (req, res, next) => {
   try {
     // Only run for authenticated users
-    if (!req.user || !req.user._id) {
+    if (!req.user || !req.user.id) {
       return next(); // Skip if no authenticated user
     }
     
     // update user last active
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.id);
     if (!user) {
       return next(createHttpError(404, "No user found"));
     }

@@ -1,32 +1,27 @@
-const express = require("express");
+import express from 'express';
+import { body } from 'express-validator';
+import * as productController from '../controllers/product.controller.js';
+import authMW from '../middleware/authMiddleware.js';
+import validateRequest from '../middleware/validateRequest.js';
+const { verifyToken, isAdmin } = authMW;
+
 const router = express.Router();
-const productController = require("../controllers/product.controller");
-const { authMiddleware, adminMiddleware } =
-  require("../middleware/auth.middleware").default;
 
-// Public routes (for users)
-router.get("/", productController.getAllProducts);
-router.get("/:id", productController.getProductById);
-router.post("/calculate-price", productController.calculatePrice);
+router.get('/', productController.getAllProducts);
+router.get('/:id', productController.getProductById);
+router.post('/calculate-price', productController.calculatePrice);
 
-// Admin routes (protected with auth middleware)
-router.post(
-  "/",
-  authMiddleware,
-  adminMiddleware,
-  productController.createProduct
-);
-router.put(
-  "/:id",
-  authMiddleware,
-  adminMiddleware,
-  productController.updateProduct
-);
-router.delete(
-  "/:id",
-  authMiddleware,
-  adminMiddleware,
-  productController.deleteProduct
-);
+const productValidation = [
+	body('id').notEmpty().withMessage('Product id is required'),
+	body('name').notEmpty().withMessage('Name is required'),
+	body('mrp').isNumeric().withMessage('MRP must be a number'),
+	body('category').notEmpty().withMessage('Category is required'),
+	body('brand').notEmpty().withMessage('Brand is required'),
+	body('stock').isInt({ min: 0 }).withMessage('Stock must be an integer >= 0'),
+];
 
-module.exports = router;
+router.post('/', verifyToken, isAdmin, productValidation, validateRequest, productController.createProduct);
+router.put('/:id', verifyToken, isAdmin, productValidation, validateRequest, productController.updateProduct);
+router.delete('/:id', verifyToken, isAdmin, productController.deleteProduct);
+
+export default router;

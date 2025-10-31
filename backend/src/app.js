@@ -5,7 +5,10 @@ import helmet from "helmet";
 import hpp from "hpp";
 import globalErrorHandler from "./middleware/globalErrorHandler.js";
 import { config } from "./config/index.js";
-import authRouter from "./routes/auth.routes.js";
+import authRouter from "./routes/authRoutes.js";
+import productsRouter from "./routes/products.routes.js";
+import usersRouter from "./routes/users.routes.js";
+import adminRouter from "./routes/admin.routes.js";
 
 const app = express();
 
@@ -37,7 +40,10 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
 
 // routes
-app.use("/api/v1/auth",authRouter)
+app.use("/api/v1/auth", authRouter);
+app.use('/api/v1/products', productsRouter);
+app.use('/api/v1/users', usersRouter);
+app.use('/api/v1/admin', adminRouter);
 
 // Global error handler
 app.use(globalErrorHandler);
