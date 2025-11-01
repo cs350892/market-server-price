@@ -12,6 +12,9 @@ const _config = {
   jwtRefreshExpIn: process.env.JWT_REFRESH_EXPIRES_IN,
   clientUrl: process.env.CLIENT_URL,
   DashboardUrl: process.env.DASHBOARD_URL,
+  cloudinaryCloud: process.env.CLOUDINARY_CLOUD,
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
+  cloudinarySecret: process.env.CLOUDINARY_API_SECRET,
 };
 
 export const config = Object.freeze(_config);
