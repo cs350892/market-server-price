@@ -14,6 +14,7 @@ import BuyAgain from './pages/BuyAgain';
 import Orders from './pages/Orders';
 import Offers from './pages/Offers';
 import Admin from './pages/Admin';
+import CreateNewProduct from './pages/CreateNewProduct';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
               <Route path="/orders" element={<Orders />} />
               <Route path="/offers" element={<Offers />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path='/createNewProduct' element={<CreateNewProduct />} />
             </Routes>
           </div>
         </Router>
