@@ -50,7 +50,7 @@ productRouter.get('/all', getAllProducts);
 // Get all products with pagination and stats
 productRouter.get('/list', getAllProductsWithLimits);
 
-// Get single product by ID
+// Get single product by ID 
 productRouter.get('/details/:productId', getSingleProduct);
 
 // Get products by category (with array of categories)

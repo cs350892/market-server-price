@@ -3,19 +3,48 @@ import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  fetchSingleNewProduct,
-  updateNewProduct,
-  // logoutUser,
-} from "../http/api.js";
-
 import { useEffect, useState } from "react";
+import { LoaderCircle, Save, X, Plus, Trash2 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
-
-import { LoaderCircle, Save, X, ImageIcon } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
+import { fetchSingleNewProduct, updateNewProduct } from "../http/api.js";
 
-// Schema for update - all fields optional except those that are always required
+// Mock API functions - replace with your actual imports
+// const fetchSingleNewProduct = async (id) => {
+//   // Mock data
+//   return {
+//     data: {
+//       product: {
+//         _id: id,
+//         productName: "Sample Product",
+//         brand: "Sample Brand",
+//         category: ["Electronics", "Gadgets"],
+//         description: "Sample description",
+//         productImage: "https://via.placeholder.com/300",
+//         discountPercentage: 10,
+//         mrp: 1000,
+//         rate: 900,
+//         stockQuantity: 50,
+//         hsnNumber: 12345,
+//         gstPercentage: 18,
+//         quantityBasedPricing: [
+//           { minQuantity: 10, maxQuantity: 50, discountPercentage: 5 },
+//           { minQuantity: 51, maxQuantity: null, discountPercentage: 10 }
+//         ],
+//         packSizes: [
+//           { name: "Pack of 2", multiplier: 2 },
+//           { name: "Pack of 5", multiplier: 5 }
+//         ]
+//       }
+//     }
+//   };
+// };
+
+// const updateNewProduct = async (id, formData) => {
+//   console.log("Updating product:", id, formData);
+//   return { data: { message: "Product updated successfully" } };
+// };
+
 const productUpdateSchema = z.object({
   productImage: z.instanceof(FileList).optional(),
   productName: z
@@ -40,22 +69,18 @@ const productUpdateSchema = z.object({
     .number()
     .min(0, "GST cannot be negative")
     .max(100, "GST cannot exceed 100%"),
-  quantityBasedPricing: z.string().optional(),
-  packSizes: z.string().optional(),
 });
 
 const UpdateProduct = () => {
   const [preview, setPreview] = useState(null);
   const [oldImg, setOldImg] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [quantityPricing, setQuantityPricing] = useState([]);
+  const [packSizes, setPackSizes] = useState([]);
 
   const { id } = useParams();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-
-  if (!id) {
-    throw new Error("Product ID is missing");
-  }
 
   const {
     register,
@@ -76,29 +101,23 @@ const UpdateProduct = () => {
       stockQuantity: 0,
       hsnNumber: 0,
       gstPercentage: 0,
-      quantityBasedPricing: "",
-      packSizes: "",
     },
   });
 
-  // Fetch product data
-  const { data, isError, isLoading, error } = useQuery({
+  const { data, isError, isLoading } = useQuery({
     queryKey: ["singleProduct", id],
     queryFn: () => fetchSingleNewProduct(id),
     enabled: !!id,
   });
 
-  // Update mutation
   const mutation = useMutation({
     mutationFn: (values) => {
       const formData = new FormData();
 
-      // Handle image if provided
       if (values.productImage && values.productImage.length > 0) {
         formData.append("productImage", values.productImage[0]);
       }
 
-      // Append all form values
       formData.append("productName", values.productName);
       formData.append("brand", values.brand);
       formData.append("category", values.category);
@@ -110,29 +129,43 @@ const UpdateProduct = () => {
       formData.append("hsnNumber", String(values.hsnNumber));
       formData.append("gstPercentage", String(values.gstPercentage));
 
-      if (values.quantityBasedPricing) {
-        formData.append("quantityBasedPricing", values.quantityBasedPricing);
+      // Add quantity pricing
+      if (quantityPricing.length > 0) {
+        const validPricing = quantityPricing
+          .filter((p) => p.minQuantity && p.discountPercentage)
+          .map((p) => ({
+            minQuantity: Number(p.minQuantity),
+            maxQuantity: p.maxQuantity ? Number(p.maxQuantity) : null,
+            discountPercentage: Number(p.discountPercentage),
+          }));
+
+        if (validPricing.length > 0) {
+          formData.append("quantityBasedPricing", JSON.stringify(validPricing));
+        }
       }
-      if (values.packSizes) {
-        formData.append("packSizes", values.packSizes);
+
+      // Add pack sizes
+      if (packSizes.length > 0) {
+        const validPackSizes = packSizes
+          .filter((p) => p.name && p.multiplier)
+          .map((p) => ({
+            name: p.name,
+            multiplier: Number(p.multiplier),
+          }));
+
+        if (validPackSizes.length > 0) {
+          formData.append("packSizes", JSON.stringify(validPackSizes));
+        }
       }
 
       return updateNewProduct(id, formData);
     },
     onSuccess: (response) => {
+      console.log(response);
+
       queryClient.invalidateQueries({ queryKey: ["singleProduct", id] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Product updated successfully", { position: "top-right" });
-
-      const { isAccessTokenExp, accessToken } = response.data;
-      if (isAccessTokenExp) {
-        const userSessionData = JSON.parse(
-          sessionStorage.getItem("user") || "{}"
-        );
-        userSessionData.accessToken = accessToken;
-        sessionStorage.removeItem("user");
-        sessionStorage.setItem("user", JSON.stringify(userSessionData));
-      }
 
       setTimeout(() => {
         navigate("/dashboard/product/allProducts");
@@ -141,15 +174,12 @@ const UpdateProduct = () => {
     onError: async (err) => {
       const message =
         err.response?.data?.message || "Error while updating product";
-
       console.error("Update error:", err);
       setErrorMessage(message);
       toast.error(message, { position: "top-right" });
 
-      // Logout user if token expired
       if (err.response?.status === 401) {
         sessionStorage.clear();
-        // await logoutUser();
         navigate("/dashboard/auth/login");
       }
     },
@@ -161,12 +191,10 @@ const UpdateProduct = () => {
       const product = data.data.product;
       setOldImg(product.productImage);
 
-      // Handle category - convert array to comma-separated string
       const categoryValue = Array.isArray(product.category)
         ? product.category.join(",")
         : product.category;
 
-      // Set all form values
       setValue("productName", product.productName);
       setValue("brand", product.brand);
       setValue("category", categoryValue);
@@ -178,23 +206,65 @@ const UpdateProduct = () => {
       setValue("hsnNumber", product.hsnNumber);
       setValue("gstPercentage", product.gstPercentage);
 
-      // Handle JSON fields
+      // Set quantity pricing
       if (
         product.quantityBasedPricing &&
         product.quantityBasedPricing.length > 0
       ) {
-        setValue(
-          "quantityBasedPricing",
-          JSON.stringify(product.quantityBasedPricing, null, 2)
+        setQuantityPricing(
+          product.quantityBasedPricing.map((p) => ({
+            minQuantity: p.minQuantity,
+            maxQuantity: p.maxQuantity || "",
+            discountPercentage: p.discountPercentage,
+          }))
         );
       }
+
+      // Set pack sizes
       if (product.packSizes && product.packSizes.length > 0) {
-        setValue("packSizes", JSON.stringify(product.packSizes, null, 2));
+        setPackSizes(
+          product.packSizes.map((p) => ({
+            name: p.name,
+            multiplier: p.multiplier,
+          }))
+        );
       }
     }
   }, [data, setValue]);
 
-  // Handle image preview
+  // Quantity pricing handlers
+  const addQuantityPricing = () => {
+    setQuantityPricing([
+      ...quantityPricing,
+      { minQuantity: "", maxQuantity: "", discountPercentage: "" },
+    ]);
+  };
+
+  const removeQuantityPricing = (index) => {
+    setQuantityPricing(quantityPricing.filter((_, i) => i !== index));
+  };
+
+  const updateQuantityPricing = (index, field, value) => {
+    const updated = [...quantityPricing];
+    updated[index][field] = value;
+    setQuantityPricing(updated);
+  };
+
+  // Pack sizes handlers
+  const addPackSize = () => {
+    setPackSizes([...packSizes, { name: "", multiplier: "" }]);
+  };
+
+  const removePackSize = (index) => {
+    setPackSizes(packSizes.filter((_, i) => i !== index));
+  };
+
+  const updatePackSize = (index, field, value) => {
+    const updated = [...packSizes];
+    updated[index][field] = value;
+    setPackSizes(updated);
+  };
+
   const productImage = watch("productImage");
   useEffect(() => {
     if (productImage?.length) {
@@ -218,13 +288,12 @@ const UpdateProduct = () => {
   };
 
   if (isError) {
-    const axiosError = error;
-    const errorMessage =
-      axiosError.response?.data?.message || "Error loading product";
     return (
       <div className="container p-4 mx-auto sm:p-6 lg:p-8">
         <div className="max-w-5xl p-6 mx-auto text-center bg-red-50 rounded-xl">
-          <p className="text-2xl font-bold text-red-600">{errorMessage}</p>
+          <p className="text-2xl font-bold text-red-600">
+            Error loading product
+          </p>
           <button
             onClick={() => navigate("/dashboard/product/allProducts")}
             className="px-6 py-2 mt-4 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
@@ -254,7 +323,6 @@ const UpdateProduct = () => {
     <div className="container min-h-screen p-4 mx-auto bg-gray-50 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto">
         <div className="p-6 bg-white shadow-lg rounded-xl sm:p-8">
-          {/* Header */}
           <div className="pb-6 mb-6 border-b border-gray-200">
             <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
               Update Product
@@ -264,7 +332,6 @@ const UpdateProduct = () => {
             </p>
           </div>
 
-          {/* Error Message */}
           {errorMessage && (
             <div className="flex items-start gap-2 p-4 mb-6 text-sm text-red-700 bg-red-50 rounded-lg">
               <span className="font-medium">Error:</span>
@@ -272,7 +339,6 @@ const UpdateProduct = () => {
             </div>
           )}
 
-          {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Image Upload Section */}
             <div className="p-6 border-2 border-gray-200 border-dashed rounded-lg bg-gray-50">
@@ -295,7 +361,6 @@ const UpdateProduct = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-4">
-                    {/* New Preview */}
                     {preview && (
                       <div className="relative">
                         <div className="mb-2 text-xs font-medium text-gray-600">
@@ -316,7 +381,6 @@ const UpdateProduct = () => {
                       </div>
                     )}
 
-                    {/* Current Image */}
                     {oldImg && (
                       <div>
                         <div className="mb-2 text-xs font-medium text-gray-600">
@@ -326,10 +390,6 @@ const UpdateProduct = () => {
                           src={oldImg}
                           alt="Current product"
                           className="object-cover border-2 border-gray-200 rounded-lg w-28 h-28 sm:w-32 sm:h-32"
-                          onError={(e) => {
-                            e.target.src =
-                              "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE4IiBmaWxsPSIjOTk5IiBkeT0iLjNlbSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
-                          }}
                         />
                       </div>
                     )}
@@ -345,7 +405,6 @@ const UpdateProduct = () => {
 
             {/* Grid Layout for Form Fields */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* Product Name */}
               <div className="md:col-span-2">
                 <label className="block">
                   <span className="block mb-2 text-sm font-medium text-gray-700">
@@ -365,7 +424,6 @@ const UpdateProduct = () => {
                 </label>
               </div>
 
-              {/* Brand */}
               <div>
                 <label className="block">
                   <span className="block mb-2 text-sm font-medium text-gray-700">
@@ -385,7 +443,6 @@ const UpdateProduct = () => {
                 </label>
               </div>
 
-              {/* Category */}
               <div>
                 <label className="block">
                   <span className="block mb-2 text-sm font-medium text-gray-700">
@@ -405,7 +462,6 @@ const UpdateProduct = () => {
                 </label>
               </div>
 
-              {/* MRP */}
               <div>
                 <label className="block">
                   <span className="block mb-2 text-sm font-medium text-gray-700">
@@ -426,7 +482,6 @@ const UpdateProduct = () => {
                 </label>
               </div>
 
-              {/* Rate */}
               <div>
                 <label className="block">
                   <span className="block mb-2 text-sm font-medium text-gray-700">
@@ -447,7 +502,6 @@ const UpdateProduct = () => {
                 </label>
               </div>
 
-              {/* Discount Percentage */}
               <div>
                 <label className="block">
                   <span className="block mb-2 text-sm font-medium text-gray-700">
@@ -468,7 +522,6 @@ const UpdateProduct = () => {
                 </label>
               </div>
 
-              {/* Stock Quantity */}
               <div>
                 <label className="block">
                   <span className="block mb-2 text-sm font-medium text-gray-700">
@@ -488,7 +541,6 @@ const UpdateProduct = () => {
                 </label>
               </div>
 
-              {/* HSN Number */}
               <div>
                 <label className="block">
                   <span className="block mb-2 text-sm font-medium text-gray-700">
@@ -508,7 +560,6 @@ const UpdateProduct = () => {
                 </label>
               </div>
 
-              {/* GST Percentage */}
               <div>
                 <label className="block">
                   <span className="block mb-2 text-sm font-medium text-gray-700">
@@ -529,7 +580,6 @@ const UpdateProduct = () => {
                 </label>
               </div>
 
-              {/* Description */}
               <div className="md:col-span-2">
                 <label className="block">
                   <span className="block mb-2 text-sm font-medium text-gray-700">
@@ -548,46 +598,209 @@ const UpdateProduct = () => {
                   )}
                 </label>
               </div>
+            </div>
 
-              {/* Quantity Based Pricing */}
-              <div className="md:col-span-2">
-                <label className="block">
-                  <span className="block mb-2 text-sm font-medium text-gray-700">
-                    Quantity Based Pricing (Optional JSON)
-                  </span>
-                  <textarea
-                    rows={3}
-                    className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-mono text-xs resize-none"
-                    placeholder='[{"minQuantity": 10, "maxQuantity": 50, "discountPercentage": 5}]'
-                    {...register("quantityBasedPricing")}
-                  ></textarea>
-                  {errors.quantityBasedPricing && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.quantityBasedPricing.message}
-                    </p>
-                  )}
-                </label>
+            {/* Quantity Based Pricing Section */}
+            <div className="p-6 border border-gray-200 rounded-lg bg-gray-50">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Quantity Based Pricing
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Set discounts based on order quantity (Optional)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addQuantityPricing}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
+                >
+                  <Plus size={16} />
+                  Add Tier
+                </button>
               </div>
 
-              {/* Pack Sizes */}
-              <div className="md:col-span-2">
-                <label className="block">
-                  <span className="block mb-2 text-sm font-medium text-gray-700">
-                    Pack Sizes (Optional JSON)
-                  </span>
-                  <textarea
-                    rows={3}
-                    className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-mono text-xs resize-none"
-                    placeholder='[{"name": "Pack of 2", "multiplier": 2}]'
-                    {...register("packSizes")}
-                  ></textarea>
-                  {errors.packSizes && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.packSizes.message}
-                    </p>
-                  )}
-                </label>
+              {quantityPricing.length > 0 && (
+                <div className="space-y-4">
+                  {quantityPricing.map((pricing, index) => (
+                    <div
+                      key={index}
+                      className="p-4 bg-white border border-gray-200 rounded-lg"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-sm font-medium text-gray-700">
+                          Tier {index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeQuantityPricing(index)}
+                          className="text-red-600 hover:text-red-700 transition"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div>
+                          <label className="block mb-2 text-xs font-medium text-gray-700">
+                            Min Quantity *
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={pricing.minQuantity}
+                            onChange={(e) =>
+                              updateQuantityPricing(
+                                index,
+                                "minQuantity",
+                                e.target.value
+                              )
+                            }
+                            className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="e.g., 10"
+                          />
+                        </div>
+                        <div>
+                          <label className="block mb-2 text-xs font-medium text-gray-700">
+                            Max Quantity (Optional)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={pricing.maxQuantity}
+                            onChange={(e) =>
+                              updateQuantityPricing(
+                                index,
+                                "maxQuantity",
+                                e.target.value
+                              )
+                            }
+                            className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="e.g., 50"
+                          />
+                        </div>
+                        <div>
+                          <label className="block mb-2 text-xs font-medium text-gray-700">
+                            Discount % *
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={pricing.discountPercentage}
+                            onChange={(e) =>
+                              updateQuantityPricing(
+                                index,
+                                "discountPercentage",
+                                e.target.value
+                              )
+                            }
+                            className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="e.g., 5"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {quantityPricing.length === 0 && (
+                <p className="text-sm text-center text-gray-500 py-8">
+                  No pricing tiers added yet. Click "Add Tier" to create
+                  quantity-based discounts.
+                </p>
+              )}
+            </div>
+
+            {/* Pack Sizes Section */}
+            <div className="p-6 border border-gray-200 rounded-lg bg-gray-50">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Pack Sizes
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Define different pack size options (Optional)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addPackSize}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
+                >
+                  <Plus size={16} />
+                  Add Pack
+                </button>
               </div>
+
+              {packSizes.length > 0 && (
+                <div className="space-y-4">
+                  {packSizes.map((pack, index) => (
+                    <div
+                      key={index}
+                      className="p-4 bg-white border border-gray-200 rounded-lg"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-sm font-medium text-gray-700">
+                          Pack {index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removePackSize(index)}
+                          className="text-red-600 hover:text-red-700 transition"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block mb-2 text-xs font-medium text-gray-700">
+                            Pack Name *
+                          </label>
+                          <input
+                            type="text"
+                            value={pack.name}
+                            onChange={(e) =>
+                              updatePackSize(index, "name", e.target.value)
+                            }
+                            className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="e.g., Pack of 2, 200ml, 1 ltr"
+                          />
+                        </div>
+                        <div>
+                          <label className="block mb-2 text-xs font-medium text-gray-700">
+                            Multiplier *
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={pack.multiplier}
+                            onChange={(e) =>
+                              updatePackSize(
+                                index,
+                                "multiplier",
+                                e.target.value
+                              )
+                            }
+                            className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="e.g., 2"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {packSizes.length === 0 && (
+                <p className="text-sm text-center text-gray-500 py-8">
+                  No pack sizes added yet. Click "Add Pack" to define different
+                  pack size options.
+                </p>
+              )}
             </div>
 
             {/* Form Actions */}

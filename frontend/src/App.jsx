@@ -15,6 +15,7 @@ import Orders from './pages/Orders';
 import Offers from './pages/Offers';
 import Admin from './pages/Admin';
 import CreateNewProduct from './pages/CreateNewProduct';
+import UpdateProduct from './pages/UpdateProduct';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
               <Route path="/offers" element={<Offers />} />
               <Route path="/admin" element={<Admin />} />
               <Route path='/createNewProduct' element={<CreateNewProduct />} />
+              <Route path='/update/:id' element={<UpdateProduct />} />
             </Routes>
           </div>
         </Router>
