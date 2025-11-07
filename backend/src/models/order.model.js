@@ -43,10 +43,40 @@ const orderSchema = new mongoose.Schema({
     required: true,
   },
   items: [orderItemSchema],
+  
+  // Offer/Discount related fields
+  offerCode: {
+    type: String,
+    uppercase: true,
+    trim: true,
+    default: null,
+  },
+  offer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Offer',
+    default: null,
+  },
+  discountAmount: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  discountType: {
+    type: String,
+    enum: ['percentage', 'fixed', 'none'],
+    default: 'none',
+  },
+  
+  // Amount fields
+  subtotalAmount: {
+    type: Number,
+    required: true,
+  },
   totalAmount: {
     type: Number,
     required: true,
   },
+  
   status: {
     type: String,
     enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
@@ -55,7 +85,7 @@ const orderSchema = new mongoose.Schema({
   deliveryType: {
     type: String,
     enum: ['delivery', 'pickup'],
-    default: 'delivery', // Default to delivery for testing
+    default: 'delivery',
   },
   shippingAddress: {
     name: String,
@@ -63,7 +93,7 @@ const orderSchema = new mongoose.Schema({
     city: String,
     state: String,
     pincode: String,
-    postalCode: String, // Alternative field name
+    postalCode: String,
     country: String,
     phone: String,
   },
@@ -85,11 +115,13 @@ const orderSchema = new mongoose.Schema({
   estimatedDelivery: Date,
 }, { timestamps: true });
 
-// Indexes for faster queries....................
+// Indexes for faster queries
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ invoiceId: 1 });
+orderSchema.index({ offerCode: 1 }); // New index for offer queries
+orderSchema.index({ offer: 1 }); // New index for offer reference
 
 // Pre-save middleware to generate invoice ID
 orderSchema.pre('save', async function(next) {
@@ -100,5 +132,19 @@ orderSchema.pre('save', async function(next) {
   }
   next();
 });
+
+// Method to calculate final amount after discount
+orderSchema.methods.calculateFinalAmount = function() {
+  return Math.round((this.subtotalAmount - this.discountAmount) * 100) / 100;
+};
+
+// Virtual for checking if order has discount
+orderSchema.virtual('hasDiscount').get(function() {
+  return this.discountAmount > 0 && this.offerCode;
+});
+
+// Ensure virtuals are included in JSON
+orderSchema.set('toJSON', { virtuals: true });
+orderSchema.set('toObject', { virtuals: true });
 
 export default mongoose.model('Order', orderSchema);
