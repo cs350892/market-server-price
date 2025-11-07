@@ -13,7 +13,7 @@ import {
   bulkUpdateStatus,
   checkAdminRole,
 } from '../controllers/offer.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js'; //  auth middleware ?
+import { authenticate } from '../middleware/auth.middleware.js'; // Your auth middleware
 
 const router = express.Router();
 

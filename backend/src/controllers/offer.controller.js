@@ -1,6 +1,6 @@
 import createHttpError from 'http-errors';
 import Offer from '../models/offer.model.js';
-import Order from '../models/order.model.js'; // Assuming  Order model
+import Order from '../models/order.model.js'; // checked ?  
 
 // Middleware to check admin role
 export const checkAdminRole = (req, res, next) => {
