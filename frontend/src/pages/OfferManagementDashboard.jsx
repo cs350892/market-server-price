@@ -1,0 +1,744 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { 
+  Plus, 
+  Edit2, 
+  Trash2, 
+  Search, 
+  Filter, 
+  TrendingUp, 
+  Calendar, 
+  Tag, 
+  Users, 
+  DollarSign,
+  X,
+  Eye,
+  BarChart3,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  XCircle
+} from 'lucide-react';
+
+const API_BASE_URL = 'http://localhost:5000/api'; // Update with your API URL
+
+const OfferManagementDashboard = () => {
+  const [offers, setOffers] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState('create');
+  const [selectedOffer, setSelectedOffer] = useState(null);
+  const [showUsageModal, setShowUsageModal] = useState(false);
+  const [usageDetails, setUsageDetails] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [formData, setFormData] = useState({
+    code: '',
+    description: '',
+    discount: '',
+    discountType: 'percentage',
+    minPurchaseAmount: '',
+    maxDiscountAmount: '',
+    expiry: '',
+    usageLimit: '',
+    status: 'active'
+  });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Get auth token from localStorage
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('accessToken');
+    return {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    };
+  };
+
+  // Fetch offers
+  const fetchOffers = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/offers/all?page=${currentPage}&status=${statusFilter !== 'all' ? statusFilter : ''}`,
+        getAuthHeaders()
+      );
+      setOffers(response.data.offers);
+      setTotalPages(response.data.totalPages);
+    } catch (err) {
+      setError('Failed to fetch offers');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch statistics
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/offers/stats`,
+        getAuthHeaders()
+      );
+      setStats(response.data.stats);
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOffers();
+    fetchStats();
+  }, [currentPage, statusFilter]);
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Create or Update offer
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      if (modalMode === 'create') {
+        await axios.post(
+          `${API_BASE_URL}/offers/create`,
+          formData,
+          getAuthHeaders()
+        );
+        setSuccess('Offer created successfully!');
+      } else {
+        await axios.put(
+          `${API_BASE_URL}/offers/${selectedOffer._id}`,
+          formData,
+          getAuthHeaders()
+        );
+        setSuccess('Offer updated successfully!');
+      }
+      
+      setShowModal(false);
+      resetForm();
+      fetchOffers();
+      fetchStats();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Operation failed');
+    }
+  };
+
+  // Delete offer
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this offer?')) return;
+
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/offers/${id}`,
+        getAuthHeaders()
+      );
+      setSuccess('Offer deleted successfully!');
+      fetchOffers();
+      fetchStats();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Delete failed');
+    }
+  };
+
+  // View usage details
+  const handleViewUsage = async (offer) => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/offers/${offer._id}/usage`,
+        getAuthHeaders()
+      );
+      setUsageDetails(response.data);
+      setShowUsageModal(true);
+    } catch (err) {
+      setError('Failed to fetch usage details', err.response?.data?.message || '');
+    }
+  };
+
+  // Open edit modal
+  const handleEdit = (offer) => {
+    setSelectedOffer(offer);
+    setModalMode('edit');
+    setFormData({
+      code: offer.code,
+      description: offer.description,
+      discount: offer.discount,
+      discountType: offer.discountType,
+      minPurchaseAmount: offer.minPurchaseAmount || '',
+      maxDiscountAmount: offer.maxDiscountAmount || '',
+      expiry: offer.expiry.split('T')[0],
+      usageLimit: offer.usageLimit || '',
+      status: offer.status
+    });
+    setShowModal(true);
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      code: '',
+      description: '',
+      discount: '',
+      discountType: 'percentage',
+      minPurchaseAmount: '',
+      maxDiscountAmount: '',
+      expiry: '',
+      usageLimit: '',
+      status: 'active'
+    });
+    setSelectedOffer(null);
+    setModalMode('create');
+  };
+
+  // Filter offers by search term
+  const filteredOffers = offers.filter(offer =>
+    offer.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    offer.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Get status badge color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'inactive': return 'bg-gray-100 text-gray-800';
+      case 'expired': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Get status icon
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'active': return <CheckCircle className="w-4 h-4" />;
+      case 'inactive': return <Clock className="w-4 h-4" />;
+      case 'expired': return <XCircle className="w-4 h-4" />;
+      default: return <AlertCircle className="w-4 h-4" />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Offer Management</h1>
+          <p className="text-gray-600">Manage promotional offers and discounts</p>
+        </div>
+
+        {/* Alert Messages */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start">
+            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
+            <button onClick={() => setError('')} className="ml-auto">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-start">
+            <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+            <span>{success}</span>
+            <button onClick={() => setSuccess('')} className="ml-auto">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Statistics Cards */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-2">
+                <div className="bg-blue-100 p-3 rounded-lg">
+                  <Tag className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+              <p className="text-gray-600 text-sm">Total Offers</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalOffers}</p>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-2">
+                <div className="bg-green-100 p-3 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+              <p className="text-gray-600 text-sm">Active Offers</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.activeOffers}</p>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-2">
+                <div className="bg-red-100 p-3 rounded-lg">
+                  <XCircle className="w-6 h-6 text-red-600" />
+                </div>
+              </div>
+              <p className="text-gray-600 text-sm">Expired Offers</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.expiredOffers}</p>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-2">
+                <div className="bg-purple-100 p-3 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+              <p className="text-gray-600 text-sm">Total Discount Given</p>
+              <p className="text-2xl font-bold text-gray-900">₹{stats.totalDiscountGiven.toLocaleString()}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Controls */}
+        <div className="bg-white rounded-lg shadow mb-6">
+          <div className="p-4 md:p-6">
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+              {/* Search */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search offers..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Filter and Create */}
+              <div className="flex gap-3">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="expired">Expired</option>
+                </select>
+
+                <button
+                  onClick={() => {
+                    resetForm();
+                    setShowModal(true);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span className="hidden sm:inline">Create Offer</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Offers Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          {loading ? (
+            <div className="p-12 text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="mt-4 text-gray-600">Loading offers...</p>
+            </div>
+          ) : filteredOffers.length === 0 ? (
+            <div className="p-12 text-center">
+              <Tag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-600">No offers found</p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredOffers.map((offer) => (
+                      <tr key={offer._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-md font-mono font-semibold text-sm">
+                              {offer.code}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900 max-w-xs truncate">
+                            {offer.description}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {offer.discountType === 'percentage' 
+                              ? `${offer.discount}%` 
+                              : `₹${offer.discount}`}
+                          </div>
+                          {offer.maxDiscountAmount && (
+                            <div className="text-xs text-gray-500">
+                              Max: ₹{offer.maxDiscountAmount}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {offer.usageCount} / {offer.usageLimit || '∞'}
+                          </div>
+                          {offer.usageLimit && (
+                            <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                              <div 
+                                className="bg-blue-600 h-1.5 rounded-full"
+                                style={{ width: `${(offer.usageCount / offer.usageLimit) * 100}%` }}
+                              ></div>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(offer.status)}`}>
+                            {getStatusIcon(offer.status)}
+                            {offer.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(offer.expiry).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleViewUsage(offer)}
+                              className="text-purple-600 hover:text-purple-900 p-1"
+                              title="View Usage"
+                            >
+                              <BarChart3 className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(offer)}
+                              className="text-blue-600 hover:text-blue-900 p-1"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(offer._id)}
+                              className="text-red-600 hover:text-red-900 p-1"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                  <div className="text-sm text-gray-700">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Create/Edit Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {modalMode === 'create' ? 'Create New Offer' : 'Edit Offer'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    resetForm();
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Offer Code *
+                    </label>
+                    <input
+                      type="text"
+                      name="code"
+                      value={formData.code}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                      placeholder="SUMMER2024"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                      <option value="expired">Expired</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description *
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    required
+                    rows="3"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Get 20% off on all products"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Discount Type *
+                    </label>
+                    <select
+                      name="discountType"
+                      value={formData.discountType}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="percentage">Percentage</option>
+                      <option value="fixed">Fixed Amount</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Discount Value *
+                    </label>
+                    <input
+                      type="number"
+                      name="discount"
+                      value={formData.discount}
+                      onChange={handleInputChange}
+                      required
+                      min="0"
+                      step="0.01"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={formData.discountType === 'percentage' ? '20' : '500'}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Min Purchase Amount
+                    </label>
+                    <input
+                      type="number"
+                      name="minPurchaseAmount"
+                      value={formData.minPurchaseAmount}
+                      onChange={handleInputChange}
+                      min="0"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="1000"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Max Discount Amount
+                    </label>
+                    <input
+                      type="number"
+                      name="maxDiscountAmount"
+                      value={formData.maxDiscountAmount}
+                      onChange={handleInputChange}
+                      min="0"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="5000"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Expiry Date *
+                    </label>
+                    <input
+                      type="date"
+                      name="expiry"
+                      value={formData.expiry}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Usage Limit
+                    </label>
+                    <input
+                      type="number"
+                      name="usageLimit"
+                      value={formData.usageLimit}
+                      onChange={handleInputChange}
+                      min="0"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Unlimited"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      resetForm();
+                    }}
+                    className="flex-1 px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  >
+                    {modalMode === 'create' ? 'Create Offer' : 'Update Offer'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Usage Details Modal */}
+        {showUsageModal && usageDetails && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Usage Details</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Code: <span className="font-mono font-semibold">{usageDetails.offer.code}</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowUsageModal(false);
+                    setUsageDetails(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-6">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-blue-600 mb-1">Total Users</p>
+                    <p className="text-2xl font-bold text-blue-900">{usageDetails.totalUsers}</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-green-600 mb-1">Total Orders</p>
+                    <p className="text-2xl font-bold text-green-900">{usageDetails.statistics.totalOrders}</p>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <p className="text-sm text-purple-600 mb-1">Total Discount</p>
+                    <p className="text-2xl font-bold text-purple-900">₹{usageDetails.statistics.totalDiscount}</p>
+                  </div>
+                   <div className="bg-orange-50 p-4 rounded-lg">
+                    <p className="text-sm text-orange-600 mb-1">Total Revenue</p>
+                    <p className="text-2xl font-bold text-orange-900">₹{usageDetails.statistics.totalRevenue}</p>
+                  </div> 
+                </div>
+
+                {/* Users Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orders Used</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Discount</th>
+                        </tr>   
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {usageDetails.users.map((user) => (
+                        <tr key={user.userId} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.ordersUsed}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₹{user.totalDiscount}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default OfferManagementDashboard;    

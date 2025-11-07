@@ -13,7 +13,8 @@ import Addresses from './pages/Addresses';
 import Cart from './pages/Cart';
 import BuyAgain from './pages/BuyAgain';
 import Orders from './pages/Orders';
-import Offers from './pages/Offers';
+// import Offers from './pages/Offers';
+import OfferManagementDashboard from './pages/OfferManagementDashboard';
 import Checkout from './pages/Checkout';
 import Messages from './pages/Messages';
 import Admin from './pages/Admin';
@@ -38,7 +39,8 @@ function App() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/buy-again" element={<BuyAgain />} />
                 <Route path="/orders" element={<Orders />} />
-                <Route path="/offers" element={<Offers />} />
+                {/* <Route path="/offers" element={<Offers />} /> */}
+                <Route path="/offers" element={<OfferManagementDashboard />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/login" element={<UserLogin />} />
