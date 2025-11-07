@@ -1,17 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Car, Tv, Store, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import BottomNavigation from '../components/BottomNavigation';
 import ProductCard from '../components/ProductCard';
-import { mockProducts } from '../data/mockData';
 import Footer from '../components/Footer';
 
 const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const featuredProducts = mockProducts.slice(0, 2);
+  useEffect(() => {
+    fetchFeaturedProducts();
+  }, []);
+
+  const fetchFeaturedProducts = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/v1/products?limit=2');
+      if (!response.ok) {
+        throw new Error('Failed to fetch products');
+      }
+      const data = await response.json();
+      setFeaturedProducts(data.products || data || []);
+    } catch (err) {
+      console.error('Error fetching featured products:', err);
+      setFeaturedProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -110,11 +130,21 @@ const Home = () => {
           <p className="text-sm text-gray-600 mb-4">
             Prices automatically adjust based on quantity: Better prices for higher quantities
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featuredProducts.map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600">No featured products available</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {featuredProducts.map(product => (
+                <ProductCard key={product._id || product.id} product={product} />
+              ))}
+            </div>
+          )}
           
           {/* View All Products Button */}
           <div className="mt-6 text-center">

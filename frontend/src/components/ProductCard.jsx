@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
 import { Plus, Minus } from 'lucide-react';
-import { useCart } from '../context/CartContext';
+import { useNavigate } from 'react-router-dom';
 import { getPricingTier, calculateItemTotal, formatPrice, formatMargin } from '../utils/pricing';
 
 const ProductCard = ({ product }) => {
   const [selectedPackSize, setSelectedPackSize] = useState(product.packSizes[0]);
   const [quantity, setQuantity] = useState(1);
-  const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   const totalQuantity = quantity * selectedPackSize.multiplier;
   const currentTier = getPricingTier(product, totalQuantity);
   const itemTotal = calculateItemTotal(product, quantity, selectedPackSize.multiplier);
 
-  const handleAddToCart = () => {
-    addToCart(product, selectedPackSize, quantity);
+  const handleAddToCheckout = () => {
+    // Store selected product in localStorage or context for checkout
+    const checkoutItem = {
+      product,
+      packSize: selectedPackSize,
+      quantity,
+      totalQuantity,
+      itemTotal,
+      currentTier
+    };
+    localStorage.setItem('checkoutItem', JSON.stringify(checkoutItem));
+    navigate('/checkout');
   };
 
   return (
@@ -102,7 +112,7 @@ const ProductCard = ({ product }) => {
         </div>
 
         <button
-          onClick={handleAddToCart}
+          onClick={handleAddToCheckout}
           className={`w-full py-3 px-4 rounded-md font-semibold transition-colors ${
             product.stock > 0 
               ? 'bg-blue-600 text-white hover:bg-blue-700' 
@@ -110,7 +120,7 @@ const ProductCard = ({ product }) => {
           }`}
           disabled={product.stock === 0}
         >
-          {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+          {product.stock > 0 ? 'Add to Checkout' : 'Out of Stock'}
         </button>
 
       </div>

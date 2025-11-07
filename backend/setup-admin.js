@@ -1,37 +1,40 @@
-// require('dotenv').config();
-// import { connect } from 'mongoose';
-// import { genSalt, hash } from 'bcryptjs';
-// import User, { findOne } from './src/models/user.model';
+import mongoose from 'mongoose';
+import { User } from './src/models/user.model.js';
+import { config } from './src/config/index.js';
 
-// const createAdmin = async () => {
-//     try {
-//         await connect(process.env.MONGODB_URI);
-//         console.log('Connected to MongoDB');
+const setupAdmin = async () => {
+  try {
+    await mongoose.connect(config.mongoUri);
+    console.log('Connected to MongoDB');
 
-//         // Check if admin exists
-//         const adminExists = await findOne({ email: 'admin@marketserverprice.com' });
-//         if (adminExists) {
-//             console.log('Admin already exists');
-//             process.exit(0);
-//         }
+    const adminEmail = 'admin@market.com';
+    const adminPassword = 'admin123456';
 
-//         // Create admin user
-//         const salt = await genSalt(10);
-//         const hashedPassword = await hash('admin23', salt);
+    const existingAdmin = await User.findOne({ email: adminEmail });
+    if (existingAdmin) {
+      console.log('Admin user already exists');
+      console.log('Email:', adminEmail);
+      process.exit(0);
+    }
 
-//         const admin = new User({
-//             email: 'admin@marketserverprice.com',
-//             password: hashedPassword,
-//             role: 'admin'
-//         });
+    const admin = new User({
+      name: 'Admin',
+      email: adminEmail,
+      password: adminPassword,
+      role: 'admin',
+      phone: '+919876543210',
+    });
 
-//         await admin.save();
-//         console.log('Admin user created successfully');
-//         process.exit(0);
-//     } catch (error) {
-//         console.error('Error:', error);
-//         process.exit(1);
-//     }
-// };
+    await admin.save();
+    console.log('✅ Admin user created successfully!');
+    console.log('📧 Email:', adminEmail);
+    console.log('🔑 Password:', adminPassword);
+    console.log('\nYou can now login with these credentials');
+    process.exit(0);
+  } catch (err) {
+    console.error('❌ Error:', err);
+    process.exit(1);
+  }
+};
 
-// createAdmin();
+setupAdmin();

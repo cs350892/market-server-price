@@ -1,11 +1,52 @@
 import Product from '../models/product.model.js';
 import createHttpError from 'http-errors';
 
-// Get all products (for users or admin)
+// Get all products with pagination, search, and filters
 export const getAllProducts = async (req, res, next) => {
   try {
-    const products = await Product.find();
-    res.json(products);
+    const { 
+      page = 1, 
+      limit = 50, 
+      search = '', 
+      category = '', 
+      brand = '',
+      stockStatus = '' // 'low', 'medium', 'high'
+    } = req.query;
+
+    // Build filter query
+    const filter = {};
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { id: { $regex: search, $options: 'i' } },
+      ];
+    }
+    if (category) filter.category = category;
+    if (brand) filter.brand = brand;
+    
+    // Stock status filter
+    if (stockStatus === 'low') filter.stock = { $lt: 20 };
+    else if (stockStatus === 'medium') filter.stock = { $gte: 20, $lt: 50 };
+    else if (stockStatus === 'high') filter.stock = { $gte: 50 };
+
+    const skip = (page - 1) * limit;
+    const products = await Product.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(skip);
+
+    const total = await Product.countDocuments(filter);
+
+    res.json({
+      success: true,
+      products,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / limit),
+      }
+    });
   } catch (err) {
     next(createHttpError(500, err.message));
   }
@@ -22,15 +63,84 @@ export const getProductById = async (req, res, next) => {
   }
 };
 
-// Admin: Create new product
+// Admin: Create new product with auto-generated pricing tiers
 export const createProduct = async (req, res, next) => {
   try {
-    // Debugging logs: show incoming body and saved document
-    console.log('[createProduct] req.body:', JSON.stringify(req.body));
-    const newProduct = new Product(req.body);
+    const { 
+      id, name, image, mrp, category, brand, stock, 
+      type = 'high-margin',
+      margin = 20, // default margin percentage
+      description = ''
+    } = req.body;
+
+    // Validate required fields
+    if (!id || !name || !mrp || !category || !brand || stock === undefined) {
+      return next(createHttpError(400, 'Missing required fields: id, name, mrp, category, brand, stock'));
+    }
+
+    // Check if product ID already exists
+    const existing = await Product.findOne({ id });
+    if (existing) {
+      return next(createHttpError(409, `Product with ID '${id}' already exists`));
+    }
+
+    // Auto-generate pricing tiers based on MRP and margin
+    const marginMultiplier = (100 - margin) / 100;
+    const basePrice = mrp * marginMultiplier;
+
+    const pricingTiers = [
+      {
+        range: '1-20',
+        minQuantity: 1,
+        maxQuantity: 20,
+        price: Number(basePrice.toFixed(2)),
+        margin: margin
+      },
+      {
+        range: '21-100',
+        minQuantity: 21,
+        maxQuantity: 100,
+        price: Number((basePrice * 0.95).toFixed(2)), // 5% extra discount
+        margin: margin + 5
+      },
+      {
+        range: '100+',
+        minQuantity: 101,
+        maxQuantity: null,
+        price: Number((basePrice * 0.90).toFixed(2)), // 10% extra discount
+        margin: margin + 10
+      }
+    ];
+
+    // Default pack sizes
+    const packSizes = [
+      { id: 'single', name: 'Single Unit', multiplier: 1 },
+      { id: 'pack-6', name: 'Pack of 6', multiplier: 6 },
+      { id: 'pack-12', name: 'Pack of 12', multiplier: 12 },
+      { id: 'carton-24', name: 'Carton (24)', multiplier: 24 }
+    ];
+
+    const newProduct = new Product({
+      id,
+      type,
+      name,
+      image: image || 'https://via.placeholder.com/300x300?text=No+Image',
+      mrp,
+      pricingTiers,
+      packSizes,
+      description,
+      category,
+      brand,
+      stock: parseInt(stock)
+    });
+
     const saved = await newProduct.save();
-    console.log('[createProduct] saved:', JSON.stringify(saved));
-    res.status(201).json(saved);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Product created successfully',
+      product: saved
+    });
   } catch (err) {
     console.error('[createProduct] error:', err);
     next(createHttpError(400, err.message));
@@ -40,13 +150,51 @@ export const createProduct = async (req, res, next) => {
 // Admin: Update product (including dynamic pricing tiers)
 export const updateProduct = async (req, res, next) => {
   try {
+    const { margin, mrp } = req.body;
+    
+    // If MRP or margin is updated, regenerate pricing tiers
+    if (margin !== undefined && mrp !== undefined) {
+      const marginMultiplier = (100 - margin) / 100;
+      const basePrice = mrp * marginMultiplier;
+
+      req.body.pricingTiers = [
+        {
+          range: '1-20',
+          minQuantity: 1,
+          maxQuantity: 20,
+          price: Number(basePrice.toFixed(2)),
+          margin: margin
+        },
+        {
+          range: '21-100',
+          minQuantity: 21,
+          maxQuantity: 100,
+          price: Number((basePrice * 0.95).toFixed(2)),
+          margin: margin + 5
+        },
+        {
+          range: '100+',
+          minQuantity: 101,
+          maxQuantity: null,
+          price: Number((basePrice * 0.90).toFixed(2)),
+          margin: margin + 10
+        }
+      ];
+    }
+
     const product = await Product.findOneAndUpdate(
       { id: req.params.id },
       req.body,
       { new: true, runValidators: true }
     );
+    
     if (!product) return next(createHttpError(404, 'Product not found'));
-    res.json(product);
+    
+    res.json({
+      success: true,
+      message: 'Product updated successfully',
+      product
+    });
   } catch (err) {
     next(createHttpError(400, err.message));
   }
@@ -57,7 +205,56 @@ export const deleteProduct = async (req, res, next) => {
   try {
     const product = await Product.findOneAndDelete({ id: req.params.id });
     if (!product) return next(createHttpError(404, 'Product not found'));
-    res.json({ message: 'Product deleted' });
+    
+    res.json({ 
+      success: true,
+      message: 'Product deleted successfully',
+      product
+    });
+  } catch (err) {
+    next(createHttpError(500, err.message));
+  }
+};
+
+// Get categories list (for filters)
+export const getCategories = async (req, res, next) => {
+  try {
+    const categories = await Product.distinct('category');
+    res.json({ success: true, categories });
+  } catch (err) {
+    next(createHttpError(500, err.message));
+  }
+};
+
+// Get brands list (for filters)
+export const getBrands = async (req, res, next) => {
+  try {
+    const brands = await Product.distinct('brand');
+    res.json({ success: true, brands });
+  } catch (err) {
+    next(createHttpError(500, err.message));
+  }
+};
+
+// Get stock statistics
+export const getStockStats = async (req, res, next) => {
+  try {
+    const lowStock = await Product.countDocuments({ stock: { $lt: 20 } });
+    const mediumStock = await Product.countDocuments({ stock: { $gte: 20, $lt: 50 } });
+    const highStock = await Product.countDocuments({ stock: { $gte: 50 } });
+    const outOfStock = await Product.countDocuments({ stock: 0 });
+    const total = await Product.countDocuments();
+
+    res.json({
+      success: true,
+      stats: {
+        total,
+        outOfStock,
+        lowStock,
+        mediumStock,
+        highStock
+      }
+    });
   } catch (err) {
     next(createHttpError(500, err.message));
   }

@@ -2,13 +2,22 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 
+const addressSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  address: { type: String, required: true },
+  city: { type: String, required: true },
+  pincode: { type: String, required: true },
+  phone: { type: String, required: true },
+  isDefault: { type: Boolean, default: false },
+});
+
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: [true, "User name required"],
       trim: true,
-      maxLength: [50, "name connot exceed 50 characters"],
+      maxLength: [50, "name cannot exceed 50 characters"],
     },
     email: {
       type: String,
@@ -29,13 +38,18 @@ const userSchema = new mongoose.Schema(
       },
       default: "user",
     },
+    phone: {
+      type: String,
+      trim: true,
+    },
+    addresses: [addressSchema],
     refreshToken: String,
     resetPasswordToken: String,
     resetPasswordExpire: Date,
     avatar: {
       type: String,
       default:
-        "https://pixabay.com/vectors/user-little-man-icon-social-media-3331256/",
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=",
     },
     lastActive: {
       type: Date,
@@ -45,17 +59,15 @@ const userSchema = new mongoose.Schema(
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-// Virtual field
-// for full user profile
-
+// Virtual field for full user profile
 userSchema.virtual("profileURL").get(function () {
   return {
     name: this.name,
     email: this.email,
-    bio: this.bio,
     avatar: this.avatar,
     role: this.role,
     lastActive: this.lastActive,
+    phone: this.phone,
   };
 });
 
@@ -67,12 +79,11 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-userSchema.methods.comparePassword = async function (enterdPassword) {
-  return await bcrypt.compare(enterdPassword, this.password);
+userSchema.methods.comparePassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// genrate user password reset token
-
+// generate user password reset token
 userSchema.methods.getResetPasswordToken = async function () {
   const resetToken = crypto.randomBytes(16).toString("hex");
   this.resetPasswordToken = crypto
