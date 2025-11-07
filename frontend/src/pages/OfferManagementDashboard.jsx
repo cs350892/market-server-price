@@ -742,3 +742,17 @@ const OfferManagementDashboard = () => {
 };
 
 export default OfferManagementDashboard;    
+
+/**
+ * TODO: First fetch offers and statistics from the backend API.And all products details only with product id,name,price,category.
+ * Then display them in a table format with options to create, edit, delete offers.
+ * Also provide a way to view usage details of each offer.
+ * OfferManagementDashboard component
+ *
+ * This component is responsible for managing the offer creation, updating, and deletion processes.
+ * It provides a user interface for viewing and managing offers, including their usage statistics.
+ *
+ * The component first fetches offers and statistics data from the backend API.
+ * It displays the offers in a table format with options to create, edit, delete, and view usage details of each offer.
+ * The component maintains state for offers, statistics, loading status, modal visibility, form data, search term, status filter, pagination, and messages.
+ */
