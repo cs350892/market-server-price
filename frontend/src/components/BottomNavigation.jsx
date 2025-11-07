@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Package, Gift, ShoppingCart } from 'lucide-react';
+import { Home, Package, Gift, MessageSquare } from 'lucide-react';
 
 const BottomNavigation = () => {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ const BottomNavigation = () => {
     { icon: Home, label: 'Home', path: '/' },
     { icon: Package, label: 'Orders', path: '/orders' },
     { icon: Gift, label: 'Offers', path: '/offers' },
-    { icon: ShoppingCart, label: 'Cart', path: '/cart' },
+    { icon: MessageSquare, label: 'Help', path: '/messages' },
   ];
 
   return (

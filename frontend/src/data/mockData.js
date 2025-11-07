@@ -393,3 +393,96 @@ export const mockCategories = [
     subcategories: ['Tools', 'Fasteners', 'Electrical'],
   },
 ];
+
+
+export const mockOrders = [
+  {
+    id: '1',
+    customer: 'John Doe',
+    products: [
+      { productId: '1', name: 'Blue Heaven Ultra Smooth Kajal', quantity: 2, price: 41.25 },
+      { productId: '2', name: 'Maggi Noodles', quantity: 12, price: 6.60 },
+    ],
+    total: 94.50,
+    status: 'pending',
+    date: '2025-10-08',
+    invoiceId: 'INV001',
+  },
+  {
+    id: '2',
+    customer: 'Jane Smith',
+    products: [
+      { productId: '7', name: 'Parle-G Biscuits', quantity: 5, price: 11.00 },
+    ],
+    total: 55.00,
+    status: 'shipped',
+    date: '2025-10-07',
+    invoiceId: 'INV002',
+  },
+  {
+    id: '3',
+    customer: 'Ravi Kumar',
+    products: [
+      { productId: '8', name: 'Lifebuoy Soap', quantity: 4, price: 16.50 },
+    ],
+    total: 66.00,
+    status: 'delivered',
+    date: '2025-10-06',
+    invoiceId: 'INV003',
+  },
+];
+
+export const mockPayouts = [
+  {
+    id: '1',
+    date: '2025-10-01',
+    amount: 5000,
+    status: 'completed',
+    orders: ['INV001', 'INV002'],
+  },
+  {
+    id: '2',
+    date: '2025-09-25',
+    amount: 3000,
+    status: 'pending',
+    orders: ['INV003'],
+  },
+];
+
+export const mockOffers = [
+  {
+    id: '1',
+    code: 'DIWALI10',
+    discount: 10,
+    products: ['1', '8', '9'],
+    status: 'active',
+    expiry: '2025-11-01',
+  },
+  {
+    id: '2',
+    code: 'SUMMER20',
+    discount: 20,
+    products: ['2', '7', '11'],
+    status: 'expired',
+    expiry: '2025-06-30',
+  },
+];
+
+export const mockMessages = [
+  {
+    id: '1',
+    from: 'customer1@example.com',
+    subject: 'Query about product availability',
+    message: 'Is Blue Heaven Kajal in stock?',
+    date: '2025-10-08',
+    status: 'unread',
+  },
+  {
+    id: '2',
+    from: 'customer2@example.com',
+    subject: 'Order delay issue',
+    message: 'My order INV002 is delayed.',
+    date: '2025-10-07',
+    status: 'replied',
+  },
+];

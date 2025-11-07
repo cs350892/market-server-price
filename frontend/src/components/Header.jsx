@@ -1,50 +1,72 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart } from 'lucide-react';
-import { useCart } from '../context/CartContext';
+import React, { useState, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, User } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
+import UserLogin from '../pages/UserLogin';
 
-const Header = ({ 
-  title, 
-  showBackButton = false, 
-  showCartIcon = true 
-}) => {
+const Header = ({ title, showBackButton }) => {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const { isAuthenticated, isAdmin, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-  const { totalItems } = useCart();
 
-  const handleBack = () => {
-    navigate(-1);
+  const handleLoginClick = () => {
+    if (isAuthenticated) {
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/profile'); // Redirect to user profile or dashboard
+      }
+    } else {
+      setIsLoginModalOpen(true);
+    }
   };
 
-  const handleCartClick = () => {
-    navigate('/cart');
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
-    <header className="bg-blue-600 text-white p-4 flex items-center justify-between shadow-md">
-      <div className="flex items-center">
-        {showBackButton && (
-          <button
-            onClick={handleBack}
-            className="mr-3 p-1 rounded-full hover:bg-blue-700 transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-        )}
-        <h1 className="text-lg font-semibold">{title}</h1>
-      </div>
-      
-      {showCartIcon && (
-        <button
-          onClick={handleCartClick}
-          className="relative p-2 rounded-full hover:bg-blue-700 transition-colors"
-        >
-          <ShoppingCart size={20} />
-          {totalItems > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              {totalItems}
-            </span>
+    <header className="bg-blue-600 text-white p-4 shadow-md">
+      <div className="container mx-auto flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          {showBackButton && (
+            <Link to="/" className="hover:text-blue-200">
+              <ArrowLeft size={24} />
+            </Link>
           )}
-        </button>
+          <h1 className="text-xl font-semibold">{title}</h1>
+        </div>
+        <div>
+          {isAuthenticated ? (
+            <div className="flex items-center space-x-4">
+              <Link to={isAdmin ? '/admin' : '/profile'} className="hover:text-blue-200">
+                {isAdmin ? 'Admin Panel' : 'Profile'}
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleLoginClick}
+              className="flex items-center space-x-2 bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100"
+            >
+              <User size={20} />
+              <span>Login</span>
+            </button>
+          )}
+        </div>
+      </div>
+      {isLoginModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <UserLogin closeModal={() => setIsLoginModalOpen(false)} />
+          </div>
+        </div>
       )}
     </header>
   );
