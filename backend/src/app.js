@@ -13,6 +13,7 @@ import ordersRouter from "./routes/orders.routes.js";
 import brandsRouter from "./routes/brands.routes.js";
 import categoriesRouter from "./routes/categories.routes.js";
 import messagesRouter from "./routes/messages.routes.js";
+import offersRouter from "./routes/offer.routes.js";
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/v1/orders', ordersRouter);
 app.use('/api/v1/brands', brandsRouter);
 app.use('/api/v1/categories', categoriesRouter);
 app.use('/api/v1/messages', messagesRouter);
+app.use('/api/v1/offers', offersRouter);
 
 // Global error handler
 app.use(globalErrorHandler);

@@ -1,6 +1,6 @@
 import createHttpError from 'http-errors';
 import Offer from '../models/offer.model.js';
-import Order from '../models/order.model.js'; // checked ?  
+import Order from '../models/order.model.js';
 
 // Middleware to check admin role
 export const checkAdminRole = (req, res, next) => {
@@ -8,117 +8,6 @@ export const checkAdminRole = (req, res, next) => {
     return next();
   }
   return next(createHttpError(403, 'Access denied. Admin privileges required.'));
-};
-
-// Get all offers (with filters and pagination)
-export const getAllOffers = async (req, res, next) => {
-  try {
-    const { status, limit = 50, page = 1, sortBy = 'createdAt', order = 'desc' } = req.query;
-    const filter = {};
-    
-    if (status) {
-      filter.status = status;
-    }
-    
-    const skip = (page - 1) * limit;
-    const sortOrder = order === 'asc' ? 1 : -1;
-    
-    const offers = await Offer.find(filter)
-      .sort({ [sortBy]: sortOrder })
-      .limit(parseInt(limit))
-      .skip(skip)
-      .populate('products', 'name image mrp price')
-      .populate('createdBy', 'name email');
-    
-    const totalOffers = await Offer.countDocuments(filter);
-    
-    res.json({
-      success: true,
-      count: offers.length,
-      totalOffers,
-      page: parseInt(page),
-      totalPages: Math.ceil(totalOffers / limit),
-      offers,
-    });
-  } catch (err) {
-    next(createHttpError(500, err.message));
-  }
-};
-
-// Get active offers (public - can be accessed by customers)
-export const getActiveOffers = async (req, res, next) => {
-  try {
-    const currentDate = new Date();
-    
-    const offers = await Offer.find({
-      status: 'active',
-      expiry: { $gte: currentDate },
-      $or: [
-        { usageLimit: null },
-        { $expr: { $lt: ['$usageCount', '$usageLimit'] } }
-      ]
-    })
-      .sort({ discount: -1 })
-      .populate('products', 'name image mrp price');
-    
-    res.json({
-      success: true,
-      count: offers.length,
-      offers,
-    });
-  } catch (err) {
-    next(createHttpError(500, err.message));
-  }
-};
-
-// Get single offer by ID
-export const getOfferById = async (req, res, next) => {
-  try {
-    const offer = await Offer.findById(req.params.id)
-      .populate('products', 'name image mrp price')
-      .populate('createdBy', 'name email');
-    
-    if (!offer) {
-      return next(createHttpError(404, 'Offer not found'));
-    }
-    
-    res.json({ 
-      success: true, 
-      offer 
-    });
-  } catch (err) {
-    next(createHttpError(500, err.message));
-  }
-};
-
-// Get offer by code (for customers to check validity)
-export const getOfferByCode = async (req, res, next) => {
-  try {
-    const { code } = req.params;
-    const currentDate = new Date();
-    
-    const offer = await Offer.findOne({ 
-      code: code.toUpperCase(),
-      status: 'active',
-      expiry: { $gte: currentDate }
-    }).populate('products', 'name image mrp price');
-    
-    if (!offer) {
-      return next(createHttpError(404, 'Invalid or expired offer code'));
-    }
-    
-    // Check usage limit
-    if (offer.usageLimit && offer.usageCount >= offer.usageLimit) {
-      return next(createHttpError(400, 'Offer usage limit reached'));
-    }
-    
-    res.json({ 
-      success: true, 
-      offer 
-    });
-  } catch (err) {
-    next(createHttpError(500, err.message));
-  }
 };
 
 // Create new offer (Admin only)
@@ -161,20 +50,30 @@ export const createOffer = async (req, res, next) => {
       return next(createHttpError(400, 'Expiry date must be in the future'));
     }
     
+    // Process products array - ensure it's an array and filter valid ObjectIds
+    let processedProducts = [];
+    if (products && Array.isArray(products) && products.length > 0) {
+      // Filter out any invalid or empty values
+      processedProducts = products.filter(id => id && id.trim() !== '');
+    }
+    
     const offer = new Offer({
       code: code.toUpperCase(),
       description,
       discount,
       discountType: discountType || 'percentage',
-      products: products || [],
+      products: processedProducts, // Empty array if no products selected (applies to all)
       expiry,
-      usageLimit,
+      usageLimit: usageLimit || null,
       minPurchaseAmount: minPurchaseAmount || 0,
-      maxDiscountAmount,
+      maxDiscountAmount: maxDiscountAmount || null,
       createdBy: req.user.id,
     });
     
     await offer.save();
+    
+    // Populate products for response
+    await offer.populate('products', 'name image mrp price category');
     
     res.status(201).json({
       success: true,
@@ -220,12 +119,22 @@ export const updateOffer = async (req, res, next) => {
       }
     }
     
+    // Process products array if being updated
+    if (updateData.products !== undefined) {
+      if (Array.isArray(updateData.products)) {
+        // Filter out any invalid or empty values
+        updateData.products = updateData.products.filter(id => id && id.trim() !== '');
+      } else {
+        updateData.products = [];
+      }
+    }
+    
     const offer = await Offer.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true, runValidators: true }
     )
-      .populate('products', 'name image mrp price')
+      .populate('products', 'name image mrp price category')
       .populate('createdBy', 'name email');
     
     if (!offer) {
@@ -239,6 +148,117 @@ export const updateOffer = async (req, res, next) => {
     });
   } catch (err) {
     next(createHttpError(400, err.message));
+  }
+};
+
+// Get all offers (with filters and pagination)
+export const getAllOffers = async (req, res, next) => {
+  try {
+    const { status, limit = 50, page = 1, sortBy = 'createdAt', order = 'desc' } = req.query;
+    const filter = {};
+    
+    if (status) {
+      filter.status = status;
+    }
+    
+    const skip = (page - 1) * limit;
+    const sortOrder = order === 'asc' ? 1 : -1;
+    
+    const offers = await Offer.find(filter)
+      .sort({ [sortBy]: sortOrder })
+      .limit(parseInt(limit))
+      .skip(skip)
+      .populate('products', 'name image mrp price category')
+      .populate('createdBy', 'name email');
+    
+    const totalOffers = await Offer.countDocuments(filter);
+    
+    res.json({
+      success: true,
+      count: offers.length,
+      totalOffers,
+      page: parseInt(page),
+      totalPages: Math.ceil(totalOffers / limit),
+      offers,
+    });
+  } catch (err) {
+    next(createHttpError(500, err.message));
+  }
+};
+
+// Get active offers (public - can be accessed by customers)
+export const getActiveOffers = async (req, res, next) => {
+  try {
+    const currentDate = new Date();
+    
+    const offers = await Offer.find({
+      status: 'active',
+      expiry: { $gte: currentDate },
+      $or: [
+        { usageLimit: null },
+        { $expr: { $lt: ['$usageCount', '$usageLimit'] } }
+      ]
+    })
+      .sort({ discount: -1 })
+      .populate('products', 'name image mrp price category');
+    
+    res.json({
+      success: true,
+      count: offers.length,
+      offers,
+    });
+  } catch (err) {
+    next(createHttpError(500, err.message));
+  }
+};
+
+// Get single offer by ID
+export const getOfferById = async (req, res, next) => {
+  try {
+    const offer = await Offer.findById(req.params.id)
+      .populate('products', 'name image mrp price category')
+      .populate('createdBy', 'name email');
+    
+    if (!offer) {
+      return next(createHttpError(404, 'Offer not found'));
+    }
+    
+    res.json({ 
+      success: true, 
+      offer 
+    });
+  } catch (err) {
+    next(createHttpError(500, err.message));
+  }
+};
+
+// Get offer by code (for customers to check validity)
+export const getOfferByCode = async (req, res, next) => {
+  try {
+    const { code } = req.params;
+    const currentDate = new Date();
+    
+    const offer = await Offer.findOne({ 
+      code: code.toUpperCase(),
+      status: 'active',
+      expiry: { $gte: currentDate }
+    }).populate('products', 'name image mrp price category');
+    
+    if (!offer) {
+      return next(createHttpError(404, 'Invalid or expired offer code'));
+    }
+    
+    // Check usage limit
+    if (offer.usageLimit && offer.usageCount >= offer.usageLimit) {
+      return next(createHttpError(400, 'Offer usage limit reached'));
+    }
+    
+    res.json({ 
+      success: true, 
+      offer 
+    });
+  } catch (err) {
+    next(createHttpError(500, err.message));
   }
 };
 
@@ -286,14 +306,11 @@ export const getOfferStats = async (req, res, next) => {
       .limit(10)
       .select('code description discount discountType usageCount usageLimit');
     
-    // Total discount given
+    // Total discount given (placeholder - should be calculated from orders)
     const offers = await Offer.find();
     let totalDiscountGiven = 0;
     
-    // You would need to calculate this from actual order data
-    // This is a placeholder calculation
     for (const offer of offers) {
-      // Assuming you store discount amount in orders
       totalDiscountGiven += offer.usageCount * offer.discount;
     }
     
@@ -319,7 +336,7 @@ export const getOfferUsageDetails = async (req, res, next) => {
     const { id } = req.params;
     
     const offer = await Offer.findById(id)
-      .populate('products', 'name image')
+      .populate('products', 'name image category')
       .populate('createdBy', 'name email');
     
     if (!offer) {
@@ -391,6 +408,7 @@ export const getOfferUsageDetails = async (req, res, next) => {
         usageLimit: offer.usageLimit,
         status: offer.status,
         expiry: offer.expiry,
+        products: offer.products
       },
       usageDetails: orderUsage,
       totalUsers: orderUsage.length,
