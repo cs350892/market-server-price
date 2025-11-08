@@ -498,7 +498,7 @@ if (offer && offer.isValid()) {
 import offerRoutes from './routes/offer.routes.js';
 
 // Register routes
-app.use('/api/offers', offerRoutes);
+app.use('/api/v1/offers', offerRoutes);
 ```
 
 ### 2. Ensure you have authentication middleware:
