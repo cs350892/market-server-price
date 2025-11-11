@@ -1,27 +1,26 @@
-import { verify } from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
+import createHttpError from 'http-errors';
+import { config } from '../config/index.js';
 
-const authMiddleware = (req, res, next) => {
-  const token = req.header("Authorization")?.replace("Bearer ", "");
-
-  if (!token) {
-    return res.status(401).json({ message: "No token, authorization denied" });
-  }
+// Named export `authenticate` to match how routes import it.
+export const authenticate = (req, res, next) => {
+  const header = req.header('Authorization');
+  if (!header) return res.status(401).json({ message: 'No token, authorization denied' });
+  const token = header.replace('Bearer ', '').trim();
 
   try {
-    const decoded = verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, config.jwtSecret || process.env.JWT_SECRET);
     req.user = decoded;
-    next();
+    return next();
   } catch (err) {
-    res.status(401).json({ message: "Token is not valid" });
+    return res.status(401).json({ message: 'Token is not valid' });
   }
 };
 
-const adminMiddleware = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    next();
-  } else {
-    res.status(403).json({ message: "Access denied. Admin rights required." });
-  }
+export const checkAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') return next();
+  return res.status(403).json({ message: 'Access denied. Admin rights required.' });
 };
 
-export default { authMiddleware, adminMiddleware };
+// Default export for backward compatibility
+export default { authenticate, checkAdmin };
