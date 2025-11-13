@@ -24,6 +24,45 @@ import {
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
+// Create axios instance with interceptor
+const api = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+// Add request interceptor to include token
+api.interceptors.request.use(
+  (config) => {
+    // Try multiple possible token storage keys
+    const token = localStorage.getItem('accessToken') || 
+                  localStorage.getItem('token') || 
+                  localStorage.getItem('authToken') ||
+                  sessionStorage.getItem('accessToken') ||
+                  sessionStorage.getItem('token');
+    
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token is invalid or expired
+      console.error('Authentication failed. Please login again.');
+      // Optionally redirect to login
+      // window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 const OfferManagementDashboard = () => {
   const [offers, setOffers] = useState([]);
   const [stats, setStats] = useState(null);
@@ -53,6 +92,24 @@ const OfferManagementDashboard = () => {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [authError, setAuthError] = useState(false);
+
+  // Check if user is authenticated
+  const checkAuth = () => {
+    const token = localStorage.getItem('accessToken') || 
+                  localStorage.getItem('token') || 
+                  localStorage.getItem('authToken') ||
+                  sessionStorage.getItem('accessToken') ||
+                  sessionStorage.getItem('token');
+    
+    if (!token) {
+      setAuthError(true);
+      setError('Authentication required. Please login first.');
+      return false;
+    }
+    setAuthError(false);
+    return true;
+  };
 
   // Fetch all products using React Query
   const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
@@ -61,35 +118,32 @@ const OfferManagementDashboard = () => {
       const response = await axios.get(`${API_BASE_URL}/v1/products/`);
       return response.data;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
+    enabled: true, // Products endpoint is public
   });
 
   const products = productsData?.products || [];
 
-  // Get auth token from localStorage
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('accessToken');
-    return {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    };
-  };
-
   // Fetch offers
   const fetchOffers = async () => {
+    if (!checkAuth()) return;
+    
     setLoading(true);
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/v1/offers/all?page=${currentPage}&status=${statusFilter !== 'all' ? statusFilter : ''}`,
-        getAuthHeaders()
+      const response = await api.get(
+        `/v1/offers/all?page=${currentPage}&status=${statusFilter !== 'all' ? statusFilter : ''}`
       );
-      setOffers(response.data.offers);
-      setTotalPages(response.data.totalPages);
+      setOffers(response.data.offers || []);
+      setTotalPages(response.data.totalPages || 1);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch offers');
-      console.error(err);
+      const errorMsg = err.response?.data?.message || 'Failed to fetch offers';
+      setError(errorMsg);
+      console.error('Fetch offers error:', err);
+      
+      if (err.response?.status === 401) {
+        setAuthError(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -97,20 +151,24 @@ const OfferManagementDashboard = () => {
 
   // Fetch statistics
   const fetchStats = async () => {
+    if (!checkAuth()) return;
+    
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/v1/offers/stats`,
-        getAuthHeaders()
-      );
+      const response = await api.get('/v1/offers/stats');
       setStats(response.data.stats);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
+      if (err.response?.status === 401) {
+        setAuthError(true);
+      }
     }
   };
 
   useEffect(() => {
-    fetchOffers();
-    fetchStats();
+    if (checkAuth()) {
+      fetchOffers();
+      fetchStats();
+    }
   }, [currentPage, statusFilter]);
 
   // Handle form input changes
@@ -147,28 +205,27 @@ const OfferManagementDashboard = () => {
   // Create or Update offer
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!checkAuth()) return;
+    
     setError('');
     setSuccess('');
 
     try {
       const submitData = {
         ...formData,
-        products: selectedProducts
+        products: selectedProducts,
+        // Ensure numeric fields are numbers or null
+        discount: formData.discount ? Number(formData.discount) : 0,
+        minPurchaseAmount: formData.minPurchaseAmount ? Number(formData.minPurchaseAmount) : 0,
+        maxDiscountAmount: formData.maxDiscountAmount ? Number(formData.maxDiscountAmount) : null,
+        usageLimit: formData.usageLimit ? Number(formData.usageLimit) : null,
       };
 
       if (modalMode === 'create') {
-        await axios.post(
-          `${API_BASE_URL}/v1/offers/create`,
-          submitData,
-          getAuthHeaders()
-        );
+        await api.post('/v1/offers/create', submitData);
         setSuccess('Offer created successfully!');
       } else {
-        await axios.put(
-          `${API_BASE_URL}/v1/offers/${selectedOffer._id}`,
-          submitData,
-          getAuthHeaders()
-        );
+        await api.put(`/v1/offers/${selectedOffer._id}`, submitData);
         setSuccess('Offer updated successfully!');
       }
       
@@ -176,40 +233,57 @@ const OfferManagementDashboard = () => {
       resetForm();
       fetchOffers();
       fetchStats();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Operation failed');
+      const errorMsg = err.response?.data?.message || 'Operation failed';
+      setError(errorMsg);
+      console.error('Submit error:', err);
+      
+      if (err.response?.status === 401) {
+        setAuthError(true);
+      }
     }
   };
 
   // Delete offer
   const handleDelete = async (id) => {
+    if (!checkAuth()) return;
     if (!window.confirm('Are you sure you want to delete this offer?')) return;
 
     try {
-      await axios.delete(
-        `${API_BASE_URL}/v1/offers/${id}`,
-        getAuthHeaders()
-      );
+      await api.delete(`/v1/offers/${id}`);
       setSuccess('Offer deleted successfully!');
       fetchOffers();
       fetchStats();
+      
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Delete failed');
+      const errorMsg = err.response?.data?.message || 'Delete failed';
+      setError(errorMsg);
+      
+      if (err.response?.status === 401) {
+        setAuthError(true);
+      }
     }
   };
 
   // View usage details
   const handleViewUsage = async (offer) => {
+    if (!checkAuth()) return;
+    
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/v1/offers/${offer._id}/usage`,
-        getAuthHeaders()
-      );
+      const response = await api.get(`/v1/offers/${offer._id}/usage`);
       setUsageDetails(response.data);
       setShowUsageModal(true);
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Failed to fetch usage details';
       setError(errorMsg);
+      
+      if (err.response?.status === 401) {
+        setAuthError(true);
+      }
     }
   };
 
@@ -283,6 +357,45 @@ const OfferManagementDashboard = () => {
     }
   };
 
+  // Show authentication error prominently
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h2>
+          <p className="text-gray-600 mb-6">
+            You need to be logged in to access the Offer Management Dashboard.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.href = '/login'}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
+            >
+              Go to Login
+            </button>
+            <button
+              onClick={() => {
+                setAuthError(false);
+                setError('');
+                checkAuth();
+              }}
+              className="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-lg transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+            <p className="text-sm text-yellow-800 font-medium mb-2">Debug Info:</p>
+            <p className="text-xs text-yellow-700 font-mono break-all">
+              Token keys checked: accessToken, token, authToken
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -296,8 +409,8 @@ const OfferManagementDashboard = () => {
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start">
             <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
-            <button onClick={() => setError('')} className="ml-auto">
+            <span className="flex-1">{error}</span>
+            <button onClick={() => setError('')} className="ml-2">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -306,8 +419,8 @@ const OfferManagementDashboard = () => {
         {success && (
           <div className="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-start">
             <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-            <span>{success}</span>
-            <button onClick={() => setSuccess('')} className="ml-auto">
+            <span className="flex-1">{success}</span>
+            <button onClick={() => setSuccess('')} className="ml-2">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -966,18 +1079,3 @@ const OfferManagementDashboard = () => {
 };
 
 export default OfferManagementDashboard;
-
-/**
- * TODO: First fetch offers and statistics from the backend API.And all products details only with product id,name,price,category.
- * Then display them in a table format with options to create, edit, delete offers.
- * Also provide a way to view usage details of each offer.
- * OfferManagementDashboard component
- *
- *
- * This component is responsible for managing the offer creation, updating, and deletion processes.
- * It provides a user interface for viewing and managing offers, including their usage statistics.
- *
- * The component first fetches offers and statistics data from the backend API.
- * It displays the offers in a table format with options to create, edit, delete, and view usage details of each offer.
- * The component maintains state for offers, statistics, loading status, modal visibility, form data, search term, status filter, pagination, and messages.
- */
