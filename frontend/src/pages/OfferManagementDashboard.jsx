@@ -82,7 +82,7 @@ const OfferManagementDashboard = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/offers/all?page=${currentPage}&status=${statusFilter !== 'all' ? statusFilter : ''}`,
+        `${API_BASE_URL}/v1/offers/all?page=${currentPage}&status=${statusFilter !== 'all' ? statusFilter : ''}`,
         getAuthHeaders()
       );
       setOffers(response.data.offers);
@@ -99,7 +99,7 @@ const OfferManagementDashboard = () => {
   const fetchStats = async () => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/offers/stats`,
+        `${API_BASE_URL}/v1/offers/stats`,
         getAuthHeaders()
       );
       setStats(response.data.stats);
@@ -158,14 +158,14 @@ const OfferManagementDashboard = () => {
 
       if (modalMode === 'create') {
         await axios.post(
-          `${API_BASE_URL}/offers/create`,
+          `${API_BASE_URL}/v1/offers/create`,
           submitData,
           getAuthHeaders()
         );
         setSuccess('Offer created successfully!');
       } else {
         await axios.put(
-          `${API_BASE_URL}/offers/${selectedOffer._id}`,
+          `${API_BASE_URL}/v1/offers/${selectedOffer._id}`,
           submitData,
           getAuthHeaders()
         );
@@ -187,7 +187,7 @@ const OfferManagementDashboard = () => {
 
     try {
       await axios.delete(
-        `${API_BASE_URL}/offers/${id}`,
+        `${API_BASE_URL}/v1/offers/${id}`,
         getAuthHeaders()
       );
       setSuccess('Offer deleted successfully!');
@@ -202,7 +202,7 @@ const OfferManagementDashboard = () => {
   const handleViewUsage = async (offer) => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/offers/${offer._id}/usage`,
+        `${API_BASE_URL}/v1/offers/${offer._id}/usage`,
         getAuthHeaders()
       );
       setUsageDetails(response.data);
