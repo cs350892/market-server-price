@@ -103,12 +103,21 @@ const orderSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'paid', 'failed'],
+    enum: ['pending', 'paid', 'failed', 'refunded'],
     default: 'pending',
   },
   paymentMethod: {
     type: String,
-    enum: ['cod', 'online', 'upi', 'cash'],
+    enum: ['cod', 'online', 'upi', 'cash', 'phonepe'],
+  },
+  // PhonePe payment fields
+  phonepeTransactionId: {
+    type: String,
+    sparse: true,
+  },
+  phonepePaymentId: {
+    type: String,
+    sparse: true,
   },
   notes: String,
   trackingNumber: String,

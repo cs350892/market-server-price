@@ -15,6 +15,11 @@ const _config = {
   cloudinaryCloud: process.env.CLOUDINARY_CLOUD,
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
   cloudinarySecret: process.env.CLOUDINARY_API_SECRET,
+  // PhonePe Configuration
+  phonePeMerchantId: process.env.PHONEPE_MERCHANT_ID,
+  phonePeSaltKey: process.env.PHONEPE_SALT_KEY,
+  phonePeSaltIndex: process.env.PHONEPE_SALT_INDEX,
+  phonePeBaseUrl: process.env.PHONEPE_BASE_URL,
 };
 
 export const config = Object.freeze(_config);

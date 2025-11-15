@@ -1,0 +1,76 @@
+@echo off
+REM PhonePe Integration - Installation Script for Windows
+REM This script will help you set up PhonePe payment gateway
+
+echo ================================================
+echo   PhonePe Payment Gateway - Installation
+echo ================================================
+echo.
+
+REM Step 1: Install backend dependencies
+echo Step 1: Installing backend dependencies...
+cd backend
+call npm install axios
+echo ✅ Backend dependencies installed
+echo.
+
+REM Step 2: Check if .env exists
+echo Step 2: Checking environment configuration...
+if not exist .env (
+    echo ⚠️  .env file not found!
+    echo Creating .env from .env.example...
+    copy .env.example .env
+    echo ✅ .env file created
+    echo.
+    echo ⚠️  IMPORTANT: Please update the following in backend\.env:
+    echo    - MONGODB_URI
+    echo    - JWT_SECRET
+    echo    - PhonePe credentials ^(or use sandbox defaults^)
+    echo.
+) else (
+    echo ✅ .env file exists
+    echo.
+)
+
+REM Step 3: Add PhonePe configuration to .env if not present
+echo Step 3: Checking PhonePe configuration...
+findstr /C:"PHONEPE_MERCHANT_ID" .env >nul 2>&1
+if errorlevel 1 (
+    echo Adding PhonePe sandbox credentials to .env...
+    echo. >> .env
+    echo # PhonePe Payment Gateway ^(Sandbox^) >> .env
+    echo PHONEPE_MERCHANT_ID=PGTESTPAYUAT >> .env
+    echo PHONEPE_SALT_KEY=099eb0cd-02cf-4e2a-8aca-3e6c6aff0399 >> .env
+    echo PHONEPE_SALT_INDEX=1 >> .env
+    echo PHONEPE_BASE_URL=https://api-preprod.phonepe.com/apis/pg-sandbox >> .env
+    echo ✅ PhonePe sandbox credentials added
+) else (
+    echo ✅ PhonePe configuration already exists
+)
+echo.
+
+REM Step 4: Return to root directory
+cd ..
+
+echo ================================================
+echo   Installation Complete!
+echo ================================================
+echo.
+echo Next Steps:
+echo 1. Update backend\.env with your MongoDB URI
+echo 2. Start backend: cd backend ^&^& npm run dev
+echo 3. Start frontend: cd frontend ^&^& npm run dev
+echo 4. Test payment flow with PhonePe sandbox
+echo.
+echo Test Credentials ^(Sandbox^):
+echo   Success: UPI ID 'success@ybl'
+echo   Failure: UPI ID 'failure@ybl'
+echo.
+echo Documentation:
+echo   - PHONEPE_QUICK_SETUP.md - Quick start guide
+echo   - PHONEPE_INTEGRATION_GUIDE.md - Complete docs
+echo   - PHONEPE_INTEGRATION_SUMMARY.md - Overview
+echo.
+echo Happy Selling! 🚀
+echo.
+pause

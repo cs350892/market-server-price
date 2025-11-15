@@ -22,6 +22,7 @@ import AdminPanel from './pages/adminPanel';
 import CreateNewProduct from './pages/CreateNewProduct';
 import UpdateProduct from './pages/UpdateProduct';
 import UserLogin from './pages/UserLogin';
+import PaymentCallback from './pages/PaymentCallback';
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
                 <Route path="/admin" element={<AdminPanel />} />
                 <Route path='/createNewProduct' element={<CreateNewProduct />} />
                 <Route path='/update/:id' element={<UpdateProduct />} />
+                <Route path="/payment/callback" element={<PaymentCallback />} />
                 {/* Catch all - redirect to home */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

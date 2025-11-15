@@ -15,9 +15,10 @@ const Checkout = () => {
     state: '',
     pincode: ''
   });
+  const [paymentMethod, setPaymentMethod] = useState('phonepe'); // phonepe or cod
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { user, token } = useContext(AuthContext);
+  const { user, token, apiFetch } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,6 +68,7 @@ const Checkout = () => {
     setLoading(true);
 
     try {
+      // First, create the order
       const orderData = {
         items: [{
           product: checkoutItem.product._id || checkoutItem.product.id,
@@ -78,7 +80,7 @@ const Checkout = () => {
         }],
         totalAmount: checkoutItem.itemTotal,
         deliveryAddress: address,
-        paymentMethod: 'COD', // Cash on Delivery for now
+        paymentMethod: paymentMethod,
         status: 'pending'
       };
 
@@ -97,17 +99,38 @@ const Checkout = () => {
       }
 
       const result = await response.json();
+      const orderId = result.order._id;
 
-      // Clear checkout item from localStorage
-      localStorage.removeItem('checkoutItem');
+      // If payment method is PhonePe, initiate payment
+      if (paymentMethod === 'phonepe') {
+        const paymentResponse = await apiFetch('/api/v1/payment/initiate', {
+          method: 'POST',
+          body: JSON.stringify({
+            orderId: orderId,
+            amount: checkoutItem.itemTotal,
+            userPhone: address.mobileNumber,
+            userName: address.fullName
+          })
+        });
 
-      // Show success message
-      setSuccess(true);
-
-      // Redirect to orders page after a delay
-      setTimeout(() => {
-        navigate('/orders');
-      }, 2000);
+        if (paymentResponse.success) {
+          // Clear checkout item from localStorage
+          localStorage.removeItem('checkoutItem');
+          
+          // Redirect to PhonePe payment page
+          window.location.href = paymentResponse.data.redirectUrl;
+        } else {
+          throw new Error('Failed to initiate payment');
+        }
+      } else {
+        // For COD, just show success
+        localStorage.removeItem('checkoutItem');
+        setSuccess(true);
+        
+        setTimeout(() => {
+          navigate('/orders');
+        }, 2000);
+      }
 
     } catch (error) {
       console.error('Order placement error:', error);
@@ -290,6 +313,55 @@ const Checkout = () => {
           </div>
         </div>
 
+        {/* Payment Method Selection */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+          
+          <div className="space-y-3">
+            <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                   style={{ borderColor: paymentMethod === 'phonepe' ? '#5f259f' : '#e5e7eb' }}>
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="phonepe"
+                checked={paymentMethod === 'phonepe'}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="mr-3"
+              />
+              <div className="flex items-center flex-1">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-purple-600 font-bold text-lg">Pe</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-800">PhonePe</p>
+                  <p className="text-sm text-gray-600">Pay securely with PhonePe</p>
+                </div>
+              </div>
+            </label>
+
+            <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                   style={{ borderColor: paymentMethod === 'cod' ? '#16a34a' : '#e5e7eb' }}>
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="cod"
+                checked={paymentMethod === 'cod'}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="mr-3"
+              />
+              <div className="flex items-center flex-1">
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-green-600 font-bold text-lg">₹</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-800">Cash on Delivery</p>
+                  <p className="text-sm text-gray-600">Pay when you receive</p>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
         {/* Place Order Button */}
         <div className="bg-white rounded-lg shadow p-6">
           <button
@@ -297,10 +369,13 @@ const Checkout = () => {
             disabled={loading}
             className="w-full bg-green-600 text-white py-4 px-6 rounded-lg hover:bg-green-700 disabled:bg-green-400 font-semibold text-lg transition-colors"
           >
-            {loading ? 'Placing Order...' : 'Place Order'}
+            {loading ? 'Processing...' : 
+             paymentMethod === 'phonepe' ? 'Proceed to Payment' : 'Place Order'}
           </button>
           <p className="text-center text-sm text-gray-500 mt-2">
-            Payment: Cash on Delivery
+            {paymentMethod === 'phonepe' ? 
+              'You will be redirected to PhonePe payment gateway' : 
+              'Payment: Cash on Delivery'}
           </p>
         </div>
       </div>

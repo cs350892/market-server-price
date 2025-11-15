@@ -14,6 +14,7 @@ import brandsRouter from "./routes/brands.routes.js";
 import categoriesRouter from "./routes/categories.routes.js";
 import messagesRouter from "./routes/messages.routes.js";
 import offersRouter from "./routes/offer.routes.js";
+import paymentRouter from "./routes/payment.routes.js";
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/api/v1/brands', brandsRouter);
 app.use('/api/v1/categories', categoriesRouter);
 app.use('/api/v1/messages', messagesRouter);
 app.use('/api/v1/offers', offersRouter);
+app.use('/api/v1/payment', paymentRouter);
 
 // Global error handler
 app.use(globalErrorHandler);
