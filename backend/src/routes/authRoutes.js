@@ -6,6 +6,11 @@ import { verifyToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+// Health check endpoint
+router.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
+
 // Public routes
 router.post('/register', [
   body('name').notEmpty().withMessage('Name is required'),
