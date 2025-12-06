@@ -88,9 +88,10 @@ const UserSignup = ({ onSuccess }) => {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
             placeholder="Enter your full name"
             required
+            style={{ color: '#000000' }}
           />
         </div>
 
@@ -100,9 +101,10 @@ const UserSignup = ({ onSuccess }) => {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
             placeholder="your@email.com"
             required
+            style={{ color: '#000000' }}
           />
         </div>
 
@@ -112,9 +114,10 @@ const UserSignup = ({ onSuccess }) => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
             placeholder="Create a password (min 6 characters)"
             required
+            style={{ color: '#000000' }}
           />
         </div>
 
@@ -124,9 +127,10 @@ const UserSignup = ({ onSuccess }) => {
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
             placeholder="Confirm your password"
             required
+            style={{ color: '#000000' }}
           />
         </div>
 

@@ -78,9 +78,10 @@ const AdminLogin = ({ closeModal }) => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
               placeholder="admin@marketserverprice.com"
               required
+              style={{ color: '#000000' }}
             />
           </div>
           <div className="space-y-2">
@@ -89,9 +90,10 @@ const AdminLogin = ({ closeModal }) => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
               placeholder="Enter password"
               required
+              style={{ color: '#000000' }}
             />
           </div>
           <button
