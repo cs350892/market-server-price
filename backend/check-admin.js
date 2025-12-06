@@ -7,9 +7,9 @@ const checkAdmin = async () => {
     await mongoose.connect(config.mongoUri);
     console.log('Connected to MongoDB\n');
 
-    // Check for admin@marketserverprice.com
-    const admin1 = await User.findOne({ email: 'admin@marketserverprice.com' });
-    console.log('admin@marketserverprice.com:', admin1 ? {
+    // Check for mspadmin
+    const admin1 = await User.findOne({ email: 'mspadmin' });
+    console.log('mspadmin:', admin1 ? {
       name: admin1.name,
       email: admin1.email,
       role: admin1.role,
