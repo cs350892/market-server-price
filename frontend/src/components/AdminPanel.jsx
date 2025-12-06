@@ -161,14 +161,16 @@ const AdminPanel = () => {
                   placeholder="Name"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="p-3 border rounded-lg"
+                  className="p-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500"
+                  style={{ color: '#000000' }}
                   required
                 />
                 <input
                   placeholder="Image URL"
                   value={formData.image}
                   onChange={e => setFormData({ ...formData, image: e.target.value })}
-                  className="p-3 border rounded-lg"
+                  className="p-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500"
+                  style={{ color: '#000000' }}
                   required
                 />
                 <input
@@ -176,21 +178,24 @@ const AdminPanel = () => {
                   placeholder="MRP"
                   value={formData.mrp}
                   onChange={e => handleMrpChange(parseFloat(e.target.value) || 0)}
-                  className="p-3 border rounded-lg"
+                  className="p-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500"
+                  style={{ color: '#000000' }}
                   required
                 />
                 <input
                   placeholder="Category"
                   value={formData.category}
                   onChange={e => setFormData({ ...formData, category: e.target.value })}
-                  className="p-3 border rounded-lg"
+                  className="p-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500"
+                  style={{ color: '#000000' }}
                   required
                 />
                 <input
                   placeholder="Brand"
                   value={formData.brand}
                   onChange={e => setFormData({ ...formData, brand: e.target.value })}
-                  className="p-3 border rounded-lg"
+                  className="p-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500"
+                  style={{ color: '#000000' }}
                   required
                 />
                 <input
@@ -198,7 +203,8 @@ const AdminPanel = () => {
                   placeholder="Stock"
                   value={formData.stock}
                   onChange={e => setFormData({ ...formData, stock: e.target.value })}
-                  className="p-3 border rounded-lg"
+                  className="p-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500"
+                  style={{ color: '#000000' }}
                   required
                 />
               </div>
@@ -207,7 +213,8 @@ const AdminPanel = () => {
                 placeholder="Description"
                 value={formData.description || ''}
                 onChange={e => setFormData({ ...formData, description: e.target.value })}
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500"
+                style={{ color: '#000000' }}
                 rows={2}
               />
 

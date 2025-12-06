@@ -289,13 +289,15 @@ const ProductManagement = () => {
               placeholder="Search by name or ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
+              style={{ color: '#000000' }}
             />
           </div>
           <select
             value={filters.category}
             onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+            style={{ color: '#000000' }}
           >
             <option value="">All Categories</option>
             {categories.map(cat => (
@@ -305,7 +307,8 @@ const ProductManagement = () => {
           <select
             value={filters.brand}
             onChange={(e) => setFilters({ ...filters, brand: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+            style={{ color: '#000000' }}
           >
             <option value="">All Brands</option>
             {brands.map(brand => (
@@ -315,7 +318,8 @@ const ProductManagement = () => {
           <select
             value={filters.stockStatus}
             onChange={(e) => setFilters({ ...filters, stockStatus: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+            style={{ color: '#000000' }}
           >
             <option value="">All Stock Levels</option>
             <option value="low">Low Stock (&lt;20)</option>

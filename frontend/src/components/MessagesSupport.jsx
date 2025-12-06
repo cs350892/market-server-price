@@ -53,7 +53,8 @@ const MessagesSupport = () => {
                   value={reply}
                   onChange={(e) => setReply(e.target.value)}
                   placeholder="Type your reply..."
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded bg-white text-gray-900 placeholder-gray-500"
+                  style={{ color: '#000000' }}
                 />
                 <button
                   onClick={() => handleReply(message.id)}

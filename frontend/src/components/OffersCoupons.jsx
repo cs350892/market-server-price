@@ -31,20 +31,23 @@ const OffersCoupons = () => {
             placeholder="Coupon Code"
             value={newOffer.code}
             onChange={(e) => setNewOffer({ ...newOffer, code: e.target.value })}
-            className="p-2 border rounded"
+            className="p-2 border rounded bg-white text-gray-900 placeholder-gray-500"
+            style={{ color: '#000000' }}
           />
           <input
             type="number"
             placeholder="Discount (%)"
             value={newOffer.discount}
             onChange={(e) => setNewOffer({ ...newOffer, discount: e.target.value })}
-            className="p-2 border rounded"
+            className="p-2 border rounded bg-white text-gray-900 placeholder-gray-500"
+            style={{ color: '#000000' }}
           />
           <input
             type="date"
             value={newOffer.expiry}
             onChange={(e) => setNewOffer({ ...newOffer, expiry: e.target.value })}
-            className="p-2 border rounded"
+            className="p-2 border rounded bg-white text-gray-900 placeholder-gray-500"
+            style={{ color: '#000000' }}
           />
           <select
             multiple
@@ -53,7 +56,8 @@ const OffersCoupons = () => {
               ...newOffer,
               products: Array.from(e.target.selectedOptions, option => option.value),
             })}
-            className="p-2 border rounded"
+            className="p-2 border rounded bg-white text-gray-900"
+            style={{ color: '#000000' }}
           >
             {mockProducts.map(product => (
               <option key={product.id} value={product.id}>{product.name}</option>

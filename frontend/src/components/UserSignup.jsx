@@ -1,12 +1,15 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { Eye, EyeOff } from 'lucide-react';
 
 const UserSignup = ({ onSuccess }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -87,12 +90,16 @@ const UserSignup = ({ onSuccess }) => {
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              console.log('Name changed to:', e.target.value);
+              setName(e.target.value);
+            }}
             className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
             placeholder="Enter your full name"
             required
             style={{ color: '#000000' }}
           />
+          <p className="text-xs text-gray-500">Current value: {name}</p>
         </div>
 
         <div className="space-y-2">
@@ -100,38 +107,68 @@ const UserSignup = ({ onSuccess }) => {
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              console.log('Email changed to:', e.target.value);
+              setEmail(e.target.value);
+            }}
             className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
             placeholder="your@email.com"
             required
             style={{ color: '#000000' }}
           />
+          <p className="text-xs text-gray-500">Current value: {email}</p>
         </div>
 
         <div className="space-y-2">
           <label className="block text-gray-700 font-medium">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
-            placeholder="Create a password (min 6 characters)"
-            required
-            style={{ color: '#000000' }}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => {
+                console.log('Password changed to:', e.target.value.length + ' characters');
+                setPassword(e.target.value);
+              }}
+              className="w-full p-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
+              placeholder="Create a password (min 6 characters)"
+              required
+              style={{ color: '#000000' }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500">Password length: {password.length}</p>
         </div>
 
         <div className="space-y-2">
           <label className="block text-gray-700 font-medium">Confirm Password</label>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
-            placeholder="Confirm your password"
-            required
-            style={{ color: '#000000' }}
-          />
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => {
+                console.log('Confirm password changed to:', e.target.value.length + ' characters');
+                setConfirmPassword(e.target.value);
+              }}
+              className="w-full p-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
+              placeholder="Confirm your password"
+              required
+              style={{ color: '#000000' }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+            >
+              {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500">Confirm password length: {confirmPassword.length}</p>
         </div>
 
         <button
