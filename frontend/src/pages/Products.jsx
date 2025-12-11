@@ -20,7 +20,7 @@ const Products = () => {
       setLoading(true);
       setError('');
       
-      let url = 'http://localhost:5000/api/v1/products';
+      let url = `${import.meta.env.VITE_API_URL}/api/v1/products`;
       if (type) {
         url += `?type=${type}`;
       }

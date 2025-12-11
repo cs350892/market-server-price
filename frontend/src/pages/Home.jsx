@@ -19,7 +19,7 @@ const Home = () => {
   const fetchFeaturedProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/v1/products?limit=2');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/products?limit=2`);
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
