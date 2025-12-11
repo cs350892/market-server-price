@@ -115,7 +115,7 @@ const AdminPanel = () => {
   const fetchAnalytics = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/v1/admin/analytics",
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/analytics`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -146,7 +146,7 @@ const AdminPanel = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/v1/products");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/products`);
       const data = await response.json();
       // Ensure data is an array - handle both direct array and {products: []} format
       const productsArray = Array.isArray(data) ? data : data.products || [];
@@ -162,7 +162,7 @@ const AdminPanel = () => {
   const fetchOrders = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/v1/admin/orders",
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/orders`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -233,8 +233,8 @@ const AdminPanel = () => {
 
     try {
       const url = editingProduct
-        ? `http://localhost:5000/api/v1/products/${editingProduct.id}`
-        : "http://localhost:5000/api/v1/products";
+        ? `${import.meta.env.VITE_API_URL}/api/v1/products/${editingProduct.id}`
+        : `${import.meta.env.VITE_API_URL}/api/v1/products`;
 
       const response = await fetch(url, {
         method: editingProduct ? "PUT" : "POST",
@@ -293,7 +293,7 @@ const AdminPanel = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/v1/products/${productId}`,
+        `${import.meta.env.VITE_API_URL}/api/v1/products/${productId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -315,7 +315,7 @@ const AdminPanel = () => {
   const handleOrderStatusUpdate = async (orderId, newStatus) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/v1/admin/orders/${orderId}/status`,
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/orders/${orderId}/status`,
         {
           method: "PUT",
           headers: {
