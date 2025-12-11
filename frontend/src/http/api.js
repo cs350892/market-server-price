@@ -1,10 +1,20 @@
 import axios from "axios";
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
-    headers: {
-        'Content-Type': 'application/json'
+// Determine base URL for API
+let baseURL = import.meta.env.VITE_API_URL;
+// Fallback logic for safety (should not be needed if .env files are set)
+if (!baseURL) {
+    if (import.meta.env.MODE === 'development') {
+        baseURL = 'http://localhost:5000/api/v1';
+    } else {
+        baseURL = 'https://<MY-RENDER-DOMAIN>.onrender.com/api/v1';
     }
-})
+}
+const api = axios.create({
+        baseURL,
+        headers: {
+                'Content-Type': 'application/json'
+        }
+});
 // Create new product (matching new backend structure)
 export const createNewProduct = async (data) => {
     return api.post('/api/v1/products/create', data, {
