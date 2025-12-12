@@ -1,14 +1,6 @@
 import axios from "axios";
 // Determine base URL for API
-let baseURL = import.meta.env.VITE_API_URL;
-// Fallback logic for safety (should not be needed if .env files are set)
-if (!baseURL) {
-    if (import.meta.env.MODE === 'development') {
-        baseURL = 'http://localhost:5000/api/v1';
-    } else {
-        baseURL = 'https://<MY-RENDER-DOMAIN>.onrender.com/api/v1';
-    }
-}
+const baseURL = import.meta.env.VITE_API_URL;
 const api = axios.create({
         baseURL,
         headers: {

@@ -38,10 +38,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Call backend /api/v1/auth/login to get token + user
+  // Get API base URL from environment
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
   const login = async (email, password) => {
     try {
-      console.log('Login attempt to:', 'http://localhost:5000/api/v1/auth/login');
-      const res = await fetch('http://localhost:5000/api/v1/auth/login', {
+      const loginUrl = `${API_BASE_URL}/auth/login`;
+      console.log('Login attempt to:', loginUrl);
+      const res = await fetch(loginUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -78,8 +81,9 @@ export const AuthProvider = ({ children }) => {
   // Call backend /api/v1/auth/register to create new user account
   const signup = async (name, email, password) => {
     try {
-      console.log('Signup attempt to:', 'http://localhost:5000/api/v1/auth/register');
-      const res = await fetch('http://localhost:5000/api/v1/auth/register', {
+      const signupUrl = `${API_BASE_URL}/auth/register`;
+      console.log('Signup attempt to:', signupUrl);
+      const res = await fetch(signupUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
@@ -119,8 +123,8 @@ export const AuthProvider = ({ children }) => {
       const headers = options.headers || {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
       headers['Content-Type'] = headers['Content-Type'] || 'application/json';
-      const fullUrl = path.startsWith('http') ? path : `http://localhost:5000${path}`;
-      
+      // Use API_BASE_URL for relative paths
+      const fullUrl = path.startsWith('http') ? path : `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
       const res = await fetch(fullUrl, { ...options, headers });
       
       // Check if response is JSON
