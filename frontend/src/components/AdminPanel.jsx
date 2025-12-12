@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { formatPrice, formatMargin } from '../utils/pricing';
 
-const API_BASE = '/api/products';
+const API_BASE = '/product';
 
 const AdminPanel = () => {
   const [products, setProducts] = useState([]);

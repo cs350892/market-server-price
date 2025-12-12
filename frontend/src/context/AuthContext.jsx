@@ -37,13 +37,11 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Call backend /api/v1/auth/login to get token + user
   // Get API base URL from environment
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+  const API_BASE_URL = import.meta.env.VITE_URL_API || 'http://localhost:5000/api';
   const login = async (email, password) => {
     try {
       const loginUrl = `${API_BASE_URL}/auth/login`;
-      console.log('Login attempt to:', loginUrl);
       const res = await fetch(loginUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -78,11 +76,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Call backend /api/v1/auth/register to create new user account
+  // Call backend /auth/signup to create new user account
   const signup = async (name, email, password) => {
     try {
-      const signupUrl = `${API_BASE_URL}/auth/register`;
-      console.log('Signup attempt to:', signupUrl);
+      const signupUrl = `${API_BASE_URL}/auth/signup`;
       const res = await fetch(signupUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

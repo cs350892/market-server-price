@@ -1,50 +1,48 @@
 import axios from "axios";
 // Determine base URL for API
-const baseURL = import.meta.env.VITE_API_URL;
+const baseURL = import.meta.env.VITE_URL_API;
 const api = axios.create({
-        baseURL,
-        headers: {
-                'Content-Type': 'application/json'
-        }
+    baseURL,
+    headers: {
+        'Content-Type': 'application/json'
+    }
 });
-// Create new product (matching new backend structure)
+// Create new product
 export const createNewProduct = async (data) => {
-    return api.post('/products/create', data, {
+    return api.post('/product', data, {
         headers: {
             'Content-Type': 'multipart/form-data'
         }
     })
 }
 
-// Fetch single product (matching new backend route)
+// Fetch single product
 export const fetchSingleNewProduct = async (id) => {
-    return api.get(`/products/details/${id}`)
+    return api.get(`/product/${id}`)
 }
 
-// Update product (matching new backend route)
+// Update product
 export const updateNewProduct = async (id, data) => {
-    console.log("product id:", id)
-    console.log("FormData:", data)
-    return api.patch(`/products/update/${id}`, data, {
+    return api.put(`/product/${id}`, data, {
         headers: {
             'Content-Type': 'multipart/form-data'
         }
     })
 }
 
-// Delete product (matching new backend route)
+// Delete product
 export const deleteNewProduct = async (id) => {
-    return api.delete(`/products/delete/${id}`)
+    return api.delete(`/product/${id}`)
 }
 
-// Get all products with pagination (new backend route)
+// Get all products with pagination
 export const fetchNewProductsWithLimit = async (limit = 10, skip = 0) => {
-    return api.get('/products/list', {
+    return api.get('/product', {
         params: { limit, skip }
     })
 }
 
-// Get products by category with limit (new backend route)
+// Get products by category with limit
 /**
  * data: { 
     limit: number, 
@@ -53,39 +51,39 @@ export const fetchNewProductsWithLimit = async (limit = 10, skip = 0) => {
 }
  */
 export const fetchNewProductByCategoryWithLimit = async (data) => {
-    return api.post('/products/by-category-limit', data)
+    return api.post('/product/by-category-limit', data)
 }
 
-// Get all categories (new backend route)
+// Get all categories
 export const fetchAllNewProductCategory = async () => {
-    return api.get('/products/categories')
+    return api.get('/product/categories')
 }
 
 // Search products
 export const searchNewProducts = async (query, limit = 10, skip = 0) => {
-    return api.get('/products/search', {
+    return api.get('/product/search', {
         params: { query, limit, skip }
     })
 }
 
 // Get products by brand
 export const fetchProductsByBrand = async (brand) => {
-    return api.get(`/products/brand/${brand}`)
+    return api.get(`/product/brand/${brand}`)
 }
 
 // Get low stock products
 export const fetchLowStockProducts = async (threshold = 20) => {
-    return api.get('/products/stock/low', {
+    return api.get('/product/stock/low', {
         params: { threshold }
     })
 }
 
 // Get out of stock products
 export const fetchOutOfStockProducts = async () => {
-    return api.get('/products/stock/out')
+    return api.get('/product/stock/out')
 }
 
 // Get price for quantity
 export const getPriceForQuantity = async (productId, quantity ) => {
-    return api.post(`/products/price/${productId}`, { quantity })
+    return api.post(`/product/price/${productId}`, { quantity })
 }

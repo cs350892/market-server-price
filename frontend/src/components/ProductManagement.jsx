@@ -60,7 +60,7 @@ const ProductManagement = () => {
         stockStatus: filters.stockStatus
       });
       
-      const response = await apiFetch(`/api/v1/products?${queryParams}`);
+      const response = await apiFetch(`/product?${queryParams}`);
       
       if (response.success) {
         setProducts(response.products);
@@ -77,7 +77,7 @@ const ProductManagement = () => {
   // Load categories from MongoDB
   const loadCategories = async () => {
     try {
-      const response = await apiFetch('/api/v1/products/categories');
+      const response = await apiFetch('/product/categories');
       if (response.success) {
         setCategories(response.categories);
       }
@@ -89,7 +89,7 @@ const ProductManagement = () => {
   // Load brands from MongoDB
   const loadBrands = async () => {
     try {
-      const response = await apiFetch('/api/v1/products/brands');
+      const response = await apiFetch('/product/brands');
       if (response.success) {
         setBrands(response.brands);
       }
@@ -117,7 +117,7 @@ const ProductManagement = () => {
     try {
       if (editMode) {
         // Update existing product
-        const response = await apiFetch(`/api/v1/products/${formData.id}`, {
+        const response = await apiFetch(`/product/${formData.id}`, {
           method: 'PUT',
           body: JSON.stringify(formData)
         });
@@ -130,7 +130,7 @@ const ProductManagement = () => {
         }
       } else {
         // Create new product
-        const response = await apiFetch('/api/v1/products', {
+        const response = await apiFetch('/product', {
           method: 'POST',
           body: JSON.stringify(formData)
         });
@@ -154,7 +154,7 @@ const ProductManagement = () => {
 
     try {
       setError(null);
-      const response = await apiFetch(`/api/v1/products/${productId}`, {
+      const response = await apiFetch(`/product/${productId}`, {
         method: 'DELETE'
       });
       
