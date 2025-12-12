@@ -9,7 +9,7 @@ const OrderManagement = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await apiFetch('/api/v1/admin/orders');
+        const res = await apiFetch('/admin/orders');
         setOrders(res.orders || []);
       } catch (err) {
         setError(err.message);
@@ -20,7 +20,7 @@ const OrderManagement = () => {
 
   const handleStatusUpdate = async (id, newStatus) => {
     try {
-      await apiFetch(`/api/v1/admin/orders/${id}/status`, {
+      await apiFetch(`/admin/orders/${id}/status`, {
         method: 'PUT',
         body: JSON.stringify({ status: newStatus }),
       });

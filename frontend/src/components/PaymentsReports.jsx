@@ -11,9 +11,9 @@ const PaymentsReports = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const p = await apiFetch('/api/v1/admin/payouts');
+        const p = await apiFetch('/admin/payouts');
         setPayouts(p.payouts || []);
-        const o = await apiFetch('/api/v1/admin/orders');
+        const o = await apiFetch('/admin/orders');
         setOrders(o.orders || []);
       } catch (err) {
         setError(err.message);

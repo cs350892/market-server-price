@@ -28,7 +28,7 @@ const Checkout = () => {
       setCheckoutItem(JSON.parse(storedItem));
     } else {
       // If no checkout item, redirect to products
-      navigate('/products');
+      navigate('/product');
     }
   }, [navigate]);
 
@@ -84,7 +84,7 @@ const Checkout = () => {
         status: 'pending'
       };
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/orders`, {
+      const response = await fetch(`${import.meta.env.VITE_URL_API}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ const Checkout = () => {
 
       // If payment method is PhonePe, initiate payment
       if (paymentMethod === 'phonepe') {
-        const paymentResponse = await apiFetch('/api/v1/payment/initiate', {
+        const paymentResponse = await apiFetch('/payment/initiate', {
           method: 'POST',
           body: JSON.stringify({
             orderId: orderId,

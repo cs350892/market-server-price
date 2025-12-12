@@ -14,13 +14,13 @@ const Dashboard = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const stats = await apiFetch('/api/v1/admin/dashboard/stats');
+        const stats = await apiFetch('/admin/dashboard/stats');
         setTodaySales(stats.todaySales || 0);
         setTotalRevenue(stats.totalRevenue || 0);
         setTotalOrders(stats.totalOrders || 0);
         setPendingOrders(stats.pendingOrders || 0);
 
-        const last7 = await apiFetch('/api/v1/admin/dashboard/sales/last7days');
+        const last7 = await apiFetch('/admin/dashboard/sales/last7days');
         setSalesData(last7.salesData || []);
       } catch (err) {
         setError(err.message);

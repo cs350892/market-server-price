@@ -10,7 +10,7 @@ const MessagesSupport = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await apiFetch('/api/v1/admin/messages');
+        const res = await apiFetch('/admin/messages');
         setMessages(res.messages || []);
       } catch (err) {
         setError(err.message);
@@ -23,7 +23,7 @@ const MessagesSupport = () => {
     const replyText = replies[id];
     if (!replyText) return;
     try {
-      await apiFetch(`/api/v1/admin/messages/${id}/reply`, {
+      await apiFetch(`/admin/messages/${id}/reply`, {
         method: 'POST',
         body: JSON.stringify({ replyText }),
       });
